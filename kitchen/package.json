@@ -1,0 +1,18 @@
+{
+  "name": "ownling-kitchen",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Ownling kitchen: runs a pet's thoughts on NEAR AI private inference, verifies the signed reply, and charges the pet's on-chain budget",
+  "type": "module",
+  "engines": {
+    "node": ">=24.22.1"
+  },
+  "scripts": {
+    "talk": "node src/talk-cli.ts"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@nearai/inference-sdk": "0.2.1",
+    "near-api-js": "7.4.0"
+  }
+}

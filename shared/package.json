@@ -1,0 +1,6 @@
+{
+  "name": "ownling-shared",
+  "private": true,
+  "type": "module",
+  "description": "Code shared by the Ownling app, kitchen and wake-anywhere client"
+}
