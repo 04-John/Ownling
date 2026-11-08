@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mochi stages and moods</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2D63D8}a:hover{color:#1E4BB0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1560px; box-sizing: border-box; padding: 72px; background: #F5F2EC; color: #1F2230; font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; gap: 40px">
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; align-items: end">
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5B6072; letter-spacing: 0.04em">CHARACTER · MOCHI · SPECIES: CLOUDLING</div>
+<h1 style="margin: 0; font-size: 60px; line-height: 1.02; font-weight: 900; letter-spacing: -0.02em">Mochi grows with every reply and every game.</h1>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 18px; padding: 16px 18px">
+<div style="font-size: 12px; font-weight: 800; color: #5B6072; letter-spacing: 0.04em">PERSONALITY, AS STORED WITH MOCHI</div>
+<div style="font-size: 18px; line-height: 1.45; margin-top: 4px">"A shy, curious cloud creature who loves rain and remembers small kindnesses."</div>
+</div>
+<div style="font-size: 15px; color: #5B6072; line-height: 1.5">Growth points = messages answered + times played. Shape gets more puffs as Mochi grows; the face stays the same so it is always Mochi.</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 28px; font-weight: 800">Five growth stages</h2>
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{stages}}" as="s" hint-placeholder-count="5">
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="height: 210px; display: flex; align-items: center; justify-content: center; background: #F5F2EC; border-radius: 16px">
+<dc-import name="Mochi" stage="{{s.id}}" mood="content" moment="none" size="200" hint-size="200px,200px"></dc-import>
+</div>
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<div style="font-size: 22px; font-weight: 900">{{s.name}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5B6072">{{s.points}}</div>
+</div>
+<div style="font-size: 14px; color: #5B6072; line-height: 1.45">{{s.talk}}</div>
+<div style="background: #E3ECFD; border-radius: 16px 16px 16px 6px; padding: 10px 12px; font-size: 14px; line-height: 1.45">{{s.line}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5B6072">mochi/{{s.id}}/body</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 16px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="margin: 0; font-size: 28px; font-weight: 800">Four hunger moods</h2>
+<span style="font-size: 15px; color: #5B6072">Food is Mochi's thinking budget, measured against the daily cap (0.02 NEAR a day by default).</span>
+</div>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{moods}}" as="m" hint-placeholder-count="4">
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 18px; display: flex; gap: 16px; align-items: center">
+<div style="width: 150px; height: 150px; flex: none; display: flex; align-items: center; justify-content: center; background: #F5F2EC; border-radius: 16px">
+<dc-import name="Mochi" stage="child" mood="{{m.id}}" moment="none" size="140" hint-size="140px,140px"></dc-import>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; min-width: 0">
+<div style="display: flex; align-items: center; gap: 8px">
+<span style="width: 10px; height: 10px; border-radius: 50%; background: {{m.dot}}"></span>
+<span style="font-size: 20px; font-weight: 900">{{m.name}}</span>
+</div>
+<div style="font-size: 14px; font-weight: 700">{{m.when}}</div>
+<div style="font-size: 14px; color: #5B6072; line-height: 1.45">{{m.look}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #5B6072">mochi/face/{{m.id}}</div>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="background: #14161B; border-radius: 28px; padding: 28px 32px; display: flex; flex-direction: column; gap: 18px; color: #F2F3F8">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<h2 style="margin: 0; font-size: 24px; font-weight: 800">Night theme and the 64 px test</h2>
+<span style="font-size: 14px; color: #A9AEBD">Same art, no dark variant needed: the ink outline carries it.</span>
+</div>
+<div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px">
+<dc-import name="Mochi" stage="egg" mood="content" moment="none" size="130" hint-size="130px,130px"></dc-import>
+<dc-import name="Mochi" stage="baby" mood="content" moment="none" size="130" hint-size="130px,130px"></dc-import>
+<dc-import name="Mochi" stage="child" mood="peckish" moment="none" size="130" hint-size="130px,130px"></dc-import>
+<dc-import name="Mochi" stage="teen" mood="hungry" moment="none" size="130" hint-size="130px,130px"></dc-import>
+<dc-import name="Mochi" stage="adult" mood="hibernating" moment="none" size="130" hint-size="130px,130px"></dc-import>
+<div style="width: 2px; height: 120px; background: #2E323C"></div>
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; gap: 6px; background: #F5F2EC; border-radius: 12px; padding: 6px">
+<dc-import name="Mochi" stage="baby" mood="content" moment="none" size="64" hint-size="64px,64px"></dc-import>
+<dc-import name="Mochi" stage="child" mood="content" moment="none" size="64" hint-size="64px,64px"></dc-import>
+<dc-import name="Mochi" stage="adult" mood="hungry" moment="none" size="64" hint-size="64px,64px"></dc-import>
+</div>
+<div style="display: flex; gap: 6px; background: #1E2128; border-radius: 12px; padding: 6px">
+<dc-import name="Mochi" stage="baby" mood="content" moment="none" size="64" hint-size="64px,64px"></dc-import>
+<dc-import name="Mochi" stage="child" mood="content" moment="none" size="64" hint-size="64px,64px"></dc-import>
+<dc-import name="Mochi" stage="adult" mood="hibernating" moment="none" size="64" hint-size="64px,64px"></dc-import>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      stages: [
+        { id: 'egg', name: 'Egg', points: '0', talk: 'Not yet. Your first message hatches it.', line: '*a tiny crack, a warm wobble*' },
+        { id: 'baby', name: 'Baby', points: '1–19', talk: 'Very short, simple words.', line: '*blinks* Hi. Rain?' },
+        { id: 'child', name: 'Child', points: '20–74', talk: 'Playful, curious, lots of questions.', line: '*bounces* What is that? Can we watch the rain?' },
+        { id: 'teen', name: 'Teen', points: '75–199', talk: 'Expressive, a little dramatic, fiercely loyal.', line: '*puffs up* You were gone forever. I counted.' },
+        { id: 'adult', name: 'Adult', points: '200+', talk: 'Calm, wise, affectionate, still playful.', line: '*settles beside you* You always come back. I like that.' }
+      ],
+      moods: [
+        { id: 'content', name: 'Content', when: 'Food for 7+ days at the cap', look: 'Bright, floats gently, blush on.', dot: '#1A6B48' },
+        { id: 'peckish', name: 'Peckish', when: 'Under 7 days of food', look: 'Glances at a raindrop, small "o" mouth.', dot: '#A8690F' },
+        { id: 'hungry', name: 'Very hungry', when: 'Under 2 days of food', look: 'Smaller, droops low, sleepy eyes, no float.', dot: '#D0342C' },
+        { id: 'hibernating', name: 'Hibernating', when: 'Under 0.0001 NEAR', look: 'Asleep and grey. Never dead: feeding wakes it.', dot: '#5D6475' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

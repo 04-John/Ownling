@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Feed Mochi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2D63D8}a:hover{color:#1E4BB0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #8E8B86; color: #1F2230; font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; position: relative">
+
+<div style="flex: 1; display: flex; align-items: center; justify-content: center; padding-top: 40px">
+<dc-import name="Mochi" stage="child" mood="content" moment="{{moment}}" size="210" hint-size="210px,210px"></dc-import>
+</div>
+
+<div style="background: #FFFFFF; border-radius: 28px 28px 0 0; padding: 12px 20px 32px; display: flex; flex-direction: column; gap: 16px">
+<div style="align-self: center; width: 40px; height: 5px; border-radius: 999px; background: #E4DFD6"></div>
+<div style="display: flex; justify-content: space-between; align-items: center">
+<h1 style="margin: 0; font-size: 26px; font-weight: 900">Feed Mochi</h1>
+<a href="Screen-03-Home.dc.html" style="font-size: 15px; font-weight: 700; padding: 10px 4px">Close</a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{options}}" as="o" hint-placeholder-count="3">
+<button onClick="{{o.pick}}" style="border-radius: 18px; border: {{o.border}}; background: {{o.bg}}; padding: 12px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; cursor: pointer; font-family: Nunito, sans-serif; color: #1F2230">
+<svg width="{{o.icon}}" height="{{o.icon}}" viewBox="0 0 24 24" fill="#6AA6F2" stroke="#2B3145" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"></path></svg>
+<span style="font-size: 15px; font-weight: 800">{{o.name}}</span>
+<span style="font-size: 12px; color: #5B6072">{{o.days}}</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">{{o.amount}} NEAR</span>
+</button>
+</sc-for>
+</div>
+
+<div style="background: #F5F2EC; border-radius: 16px; padding: 12px 14px; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 13px; align-items: baseline">
+<span style="color: #5B6072">From</span><span style="font-family: 'JetBrains Mono', monospace; text-align: right">nearpet-gate-3397.testnet</span>
+<span style="color: #5B6072">To</span><span style="text-align: right">Mochi's food budget <span style="font-family: 'JetBrains Mono', monospace">· pet #1</span></span>
+<span style="color: #5B6072">Amount</span><span style="font-family: 'JetBrains Mono', monospace; text-align: right">{{amount}} testnet NEAR</span>
+<span style="color: #5B6072">Daily cap</span><span style="font-family: 'JetBrains Mono', monospace; text-align: right">0.02 testnet NEAR</span>
+<span style="color: #5B6072">After</span><span style="text-align: right; font-weight: 800">{{after}}</span>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.45; color: #5B6072">Days are counted at the full daily cap, so light chatting lasts longer. Food stays with Mochi: only its kitchen can spend it, with a receipt for every reply. You can't take it back out.</p>
+
+<button onClick="{{feed}}" style="height: 54px; border-radius: 999px; border: none; background: #2D63D8; color: #FFFFFF; font-family: Nunito, sans-serif; font-size: 17px; font-weight: 800; cursor: pointer">{{cta}}</button>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const sel = (this.state && this.state.sel) || 'shower';
+    const fed = this.state && this.state.fed;
+    const list = [
+      { id: 'drizzle', name: 'Drizzle', amount: '0.02', add: 1, icon: 16 },
+      { id: 'shower', name: 'Shower', amount: '0.1', add: 5, icon: 22 },
+      { id: 'storm', name: 'Storm', amount: '0.5', add: 25, icon: 28 }
+    ];
+    const cur = list.find((x) => x.id === sel);
+    return {
+      moment: fed ? 'eating' : 'none',
+      options: list.map((x) => ({
+        name: x.name, amount: x.amount, icon: x.icon,
+        days: '+' + x.add + (x.add === 1 ? ' day' : ' days'),
+        border: x.id === sel ? '2px solid #2D63D8' : '1px solid #E4DFD6',
+        bg: x.id === sel ? '#E3ECFD' : '#FFFFFF',
+        pick: () => this.setState({ sel: x.id, fed: false })
+      })),
+      amount: cur.amount,
+      after: 'At least ' + (23 + cur.add) + ' days',
+      cta: fed ? 'Fed. Mochi is eating' : 'Feed ' + cur.amount + ' NEAR',
+      feed: () => this.setState({ fed: true })
+    };
+  }
+}
+</script>
+</body>
+</html>

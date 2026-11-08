@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mochi moments, layers and dressing</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2D63D8}a:hover{color:#1E4BB0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1560px; box-sizing: border-box; padding: 72px; background: #F5F2EC; color: #1F2230; font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; gap: 40px">
+
+<div style="display: flex; flex-direction: column; gap: 12px; max-width: 900px">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5B6072; letter-spacing: 0.04em">MOMENTS · DRIVEN BY WHAT JUST HAPPENED</div>
+<h1 style="margin: 0; font-size: 56px; line-height: 1.04; font-weight: 900; letter-spacing: -0.02em">Ten moments, one face kit.</h1>
+<p style="margin: 0; font-size: 18px; line-height: 1.5; color: #5B6072">Each moment swaps eyes and mouth and adds one small prop. Body art never changes, so every moment works on every stage.</p>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 16px">
+<sc-for list="{{moments}}" as="m" hint-placeholder-count="10">
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+<div style="height: 196px; display: flex; align-items: center; justify-content: center; background: {{m.bg}}; border-radius: 16px">
+<dc-import name="Mochi" stage="{{m.stage}}" mood="{{m.mood}}" moment="{{m.id}}" size="176" hint-size="176px,176px"></dc-import>
+</div>
+<div style="font-size: 19px; font-weight: 900">{{m.name}}</div>
+<div style="font-size: 13px; font-weight: 700; color: #2D63D8">{{m.trigger}}</div>
+<div style="font-size: 13px; color: #5B6072; line-height: 1.45">{{m.note}}</div>
+</div>
+</sc-for>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; flex: 1">
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 26px; font-weight: 800">Layers, named by state</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #5B6072">Body and face are separate, so 5 stages × 4 moods × 10 moments come from 5 bodies and one face kit. Export SVG; the wallet picture is a 512 px PNG.</p>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 24px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.5">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-weight: 600">mochi/egg/body</div>
+<div style="font-weight: 600">mochi/baby/body</div>
+<div style="font-weight: 600">mochi/child/body</div>
+<div style="font-weight: 600">mochi/teen/body</div>
+<div style="font-weight: 600">mochi/adult/body</div>
+<div style="color: #5B6072">mochi/body/fill-live · fill-pale · fill-sleep</div>
+<div style="color: #5B6072">mochi/shadow</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<div style="font-weight: 600">mochi/face/eyes-open · happy · sleepy · asleep · wide</div>
+<div style="font-weight: 600">mochi/face/mouth-smile · open · o · wobble · big</div>
+<div style="font-weight: 600">mochi/face/cheeks</div>
+<div style="color: #5B6072">mochi/prop/think · zz · raindrop · sparkle · sweat · proof · bow</div>
+<div style="color: #5B6072">mochi/slot/hat · scarf · item</div>
+</div>
+</div>
+<div style="background: #F5F2EC; border-radius: 14px; padding: 14px 16px; font-size: 14px; line-height: 1.5">Face anchor per stage (viewBox 200): baby 100,136 ×0.78 · child 100,128 ×1 · teen 100,124 ×1.05 · adult 100,120 ×1.12. Mood scales the whole body from the ground point 100,176.</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 26px; font-weight: 800">Dressing slots</h2>
+<p style="margin: 0; font-size: 15px; line-height: 1.5; color: #5B6072">Illia's "dressing": cosmetic outfits only. Each item snaps to a slot anchored per stage; nothing changes stats or price.</p>
+<div style="display: flex; justify-content: space-around; align-items: center; gap: 12px; background: #F5F2EC; border-radius: 16px; padding: 18px 8px">
+<dc-import name="Mochi" stage="child" mood="content" moment="none" size="190" slots="true" hint-size="190px,190px"></dc-import>
+<dc-import name="Mochi" stage="adult" mood="content" moment="none" size="190" slots="true" hint-size="190px,190px"></dc-import>
+</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; font-size: 14px; line-height: 1.4">
+<div><b>Hat</b><br><span style="color: #5B6072">rain hood, leaf, tiny beret</span></div>
+<div><b>Scarf</b><br><span style="color: #5B6072">knit scarf, bandana, bell</span></div>
+<div><b>Held item</b><br><span style="color: #5B6072">umbrella, kite string, teacup</span></div>
+</div>
+</div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      moments: [
+        { id: 'talking', stage: 'egg', mood: 'content', name: 'Hatching', trigger: 'First message sent', note: 'The egg cracks and wobbles; the reply comes from a baby.', bg: '#F5F2EC' },
+        { id: 'thinking', stage: 'child', mood: 'content', name: 'Thinking', trigger: 'Waiting for a reply', note: 'Eyes look up, three dots pulse in a cloud bubble.', bg: '#F5F2EC' },
+        { id: 'talking', stage: 'child', mood: 'content', name: 'Talking', trigger: 'Reply arrives', note: 'Mouth open while the bubble types in.', bg: '#F5F2EC' },
+        { id: 'verified', stage: 'child', mood: 'content', name: 'Verified', trigger: 'Proof check passed', note: 'A small green seal on the shoulder, matching the tag on the reply.', bg: '#F5F2EC' },
+        { id: 'eating', stage: 'child', mood: 'content', name: 'Eating', trigger: 'Just fed', note: 'A raindrop goes in. Happy eyes, no float while chewing.', bg: '#E3ECFD' },
+        { id: 'playing', stage: 'child', mood: 'content', name: 'Playing', trigger: 'Play tapped, bond up', note: 'Bounces with sparkles. Starts a 10-minute cooldown.', bg: '#E3ECFD' },
+        { id: 'resting', stage: 'child', mood: 'content', name: 'Needs a rest', trigger: 'Play on cooldown', note: 'Sleepy eyes, one sweat drop. Play button shows the wait.', bg: '#F5F2EC' },
+        { id: 'waking', stage: 'child', mood: 'content', name: 'Waking somewhere new', trigger: 'Opened in another app', note: 'Wide eyes, sparkles. The kill-switch climax.', bg: '#F5F2EC' },
+        { id: 'gifting', stage: 'child', mood: 'content', name: 'Changing hands', trigger: 'Gift or sale', note: 'A bow on top. Keeps food and self, forgets the old diary.', bg: '#F5F2EC' },
+        { id: 'none', stage: 'child', mood: 'hibernating', name: 'Hibernating', trigger: 'Food under 0.0001 NEAR', note: 'Grey and asleep. Feeding wakes it, nothing is lost.', bg: '#F5F2EC' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

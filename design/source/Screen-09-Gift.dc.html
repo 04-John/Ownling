@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Give Mochi away</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2D63D8}a:hover{color:#1E4BB0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 56px 20px 32px; background: #F5F2EC; color: #1F2230; font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; gap: 16px">
+
+<div style="display: flex; align-items: center; justify-content: space-between">
+<a href="Screen-08-Ownership.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E4DFD6; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+</div>
+
+<div style="display: flex; align-items: center; gap: 12px">
+<dc-import name="Mochi" stage="child" mood="content" moment="gifting" size="120" hint-size="120px,120px"></dc-import>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h1 style="margin: 0; font-size: 28px; line-height: 1.1; font-weight: 900; letter-spacing: -0.02em">Give Mochi to someone</h1>
+<div style="font-size: 14px; color: #5B6072">Mochi stays Mochi. Your talks stay yours.</div>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 800; color: #1A6B48">Goes with Mochi</div>
+<div style="font-size: 14px; line-height: 1.5">Personality<br>Growth · Child, 34<br>Food · <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px">0.46 NEAR</span><br>Outfits</div>
+</div>
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 14px; font-weight: 800; color: #5B6072">Stays with you</div>
+<div style="font-size: 14px; line-height: 1.5">The diary. Mochi won't remember your conversations; the new owner starts fresh.</div>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="to" style="font-size: 14px; font-weight: 800">Their NEAR account</label>
+<input id="to" placeholder="friend.testnet" style="height: 50px; border-radius: 14px; border: 1px solid #E4DFD6; background: #FFFFFF; padding: 0 16px; font-family: 'JetBrains Mono', monospace; font-size: 15px; color: #1F2230; box-sizing: border-box">
+</div>
+
+<div style="background: #FFF4DE; border-radius: 16px; padding: 12px 14px; font-size: 14px; line-height: 1.45; color: #5C3A06">This can't be undone. Only the new owner can give Mochi back.</div>
+
+<div style="flex: 1"></div>
+<button style="height: 54px; border-radius: 999px; border: none; background: #2D63D8; color: #FFFFFF; font-family: Nunito, sans-serif; font-size: 17px; font-weight: 800; cursor: pointer">Give Mochi</button>
+<p style="margin: 0; font-size: 13px; color: #5B6072; text-align: center">Your wallet asks you to confirm.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

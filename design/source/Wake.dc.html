@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Wake-anywhere client</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;600;700;800&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#035CA3}a:hover{color:#023F70}
+</style>
+</helmet>
+<div style="min-height: 1300px; box-sizing: border-box; background: #FFFFFF; color: #1D1D1F; font-family: 'Schibsted Grotesk', system-ui, sans-serif">
+
+<div style="border-bottom: 1px solid #E3E3E6; padding: 14px 24px; display: flex; flex-wrap: wrap; gap: 8px 20px; align-items: center; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 13px">
+<span style="font-weight: 600">wake.html</span>
+<span style="color: #5F6068">One file. Runs in your browser. Talks to NEAR and NEAR AI directly.</span>
+</div>
+
+<div style="max-width: 1040px; margin: 0 auto; padding: 40px 24px 56px; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; flex-direction: column; gap: 10px; max-width: 720px">
+<h1 style="margin: 0; font-size: 2.6rem; line-height: 1.08; font-weight: 800; letter-spacing: -0.01em">Wake your pet without us.</h1>
+<p style="margin: 0; font-size: 1.05rem; line-height: 1.55; color: #5F6068">This page is not the Ownling app and uses none of its servers. It reads your pet from its contract on NEAR and asks NEAR AI for replies. If Mochi answers here, it never depended on us.</p>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid #E3E3E6; border-radius: 999px; font-size: 14px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #D0342C"></span>Ownling app · unreachable</span>
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid #E3E3E6; border-radius: 999px; font-size: 14px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1A6B48"></span>Pet contract · reachable</span>
+<span style="display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border: 1px solid #E3E3E6; border-radius: 999px; font-size: 14px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1A6B48"></span>NEAR AI · reachable</span>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: stretch">
+
+<div style="flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 14px">
+<div style="border: 1px solid #E3E3E6; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5F6068">1 · YOUR ACCOUNT</div>
+<label for="acct" style="font-size: 14px; font-weight: 600">NEAR account</label>
+<input id="acct" value="nearpet-gate-3397.testnet" style="height: 44px; border: 1px solid #E3E3E6; border-radius: 11px; padding: 0 12px; font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #1D1D1F; box-sizing: border-box">
+<button style="height: 44px; border-radius: 999px; border: none; background: #035CA3; color: #FFFFFF; font-family: 'Schibsted Grotesk', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer">Sign in</button>
+<div style="font-size: 13px; color: #5F6068; line-height: 1.45">One signature. It also rebuilds your diary key here, in this tab.</div>
+</div>
+<div style="border: 1px solid #E3E3E6; border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5F6068">2 · READ FROM NEAR</div>
+<div style="display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-family: 'JetBrains Mono', monospace; font-size: 13px">
+<span style="color: #5F6068">contract</span><span>nearpet-pets-6831.testnet</span>
+<span style="color: #5F6068">token</span><span>#1 · Mochi</span>
+<span style="color: #5F6068">owner</span><span>nearpet-gate-3397.testnet</span>
+<span style="color: #5F6068">growth</span><span>34 · child</span>
+<span style="color: #5F6068">food</span><span>0.46 testnet NEAR</span>
+<span style="color: #5F6068">diary</span><span>2.1 KB · unlocked</span>
+<span style="color: #5F6068">model</span><span>GLM-5.3 Flash</span>
+</div>
+</div>
+</div>
+
+<div style="flex: 999 1 520px; min-width: 0; border: 1px solid #E3E3E6; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 16px; background: #F6F6F7">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5F6068">3 · TALK</div>
+<div style="display: flex; justify-content: center; padding: 8px 0">
+<dc-import name="Mochi" stage="child" mood="content" moment="waking" size="240" hint-size="240px,240px"></dc-import>
+</div>
+<div style="align-self: flex-end; max-width: 80%; background: #035CA3; color: #FFFFFF; border-radius: 18px 18px 6px 18px; padding: 10px 14px; font-size: 16px; line-height: 1.45">Mochi, it's me. Do you remember the rain?</div>
+<div style="align-self: flex-start; max-width: 80%; display: flex; flex-direction: column; gap: 6px">
+<div style="background: #FFFFFF; border: 1px solid #E3E3E6; border-radius: 18px 18px 18px 6px; padding: 10px 14px; font-size: 16px; line-height: 1.45"><i>*blinks*</i> This place is new. You named me on a rainy day, though.</div>
+<div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #E7F3EC; color: #1A6B48; font-size: 12px; font-weight: 700"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1A6B48"></span>Verified</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5F6068">signed by NEAR AI hardware · no Ownling kitchen used</span>
+</div>
+</div>
+<div style="display: flex; gap: 8px; margin-top: auto">
+<label for="msg" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Message</label>
+<input id="msg" placeholder="Say something" style="flex: 1; min-width: 0; height: 44px; border: 1px solid #E3E3E6; border-radius: 11px; padding: 0 12px; font-family: 'Schibsted Grotesk', sans-serif; font-size: 15px; background: #FFFFFF; box-sizing: border-box">
+<button style="height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #E3E3E6; background: #FFFFFF; font-family: 'Schibsted Grotesk', sans-serif; font-size: 15px; font-weight: 700; color: #1D1D1F; cursor: pointer">Send</button>
+</div>
+</div>
+
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px">
+<div style="flex: 1 1 300px; min-width: 0; border: 1px solid #E3E3E6; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 15px; font-weight: 700">Who pays here</div>
+<div style="font-size: 14px; line-height: 1.5; color: #5F6068">You do, with your own NEAR AI key. Only Mochi's chosen kitchen can charge its food, and that kitchen is off, so Mochi's food isn't touched. The key stays in this tab and is sent only to NEAR AI.</div>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; border: 1px solid #E3E3E6; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 15px; font-weight: 700">What happens in this tab</div>
+<div style="font-size: 14px; line-height: 1.5; color: #5F6068">Your message is sealed for NEAR AI's hardware here, the reply comes back here, and the hardware signature is checked here. No server of ours is involved.</div>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; border: 1px solid #E3E3E6; border-radius: 16px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 15px; font-weight: 700">To stay long term</div>
+<div style="font-size: 14px; line-height: 1.5; color: #5F6068">Use Change kitchen to move Mochi to another kitchen. Its own food pays for its thoughts again. Your wallet confirms the change.</div>
+</div>
+</div>
+<p style="margin: 0; font-size: 13px; color: #5F6068; line-height: 1.5">Testnet. Source: <a href="https://github.com/04-John/Ownling">github.com/04-John/Ownling</a>, folder wake/.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1300}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

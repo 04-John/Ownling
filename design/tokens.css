@@ -1,0 +1,129 @@
+/* Ownling design tokens. Source of truth: design/tokens.json.
+ * Game surfaces use --ow-*. Proof surfaces (ownership page, wake-anywhere client)
+ * use --proof-* so they read as neutral and checkable, not as the game.
+ * Fonts: Nunito (game), Schibsted Grotesk (proof surfaces), JetBrains Mono (amounts,
+ * accounts, hashes only). All free on Google Fonts:
+ * https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Schibsted+Grotesk:wght@400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap
+ */
+
+:root {
+  /* Game palette, light */
+  --ow-mist: #F5F2EC;      /* app ground */
+  --ow-paper: #FFFFFF;     /* cards, sheets */
+  --ow-ink: #1F2230;       /* text */
+  --ow-dusk: #5B6072;      /* secondary text */
+  --ow-line: #E4DFD6;      /* dividers, borders */
+  --ow-rain: #2D63D8;      /* the one accent: main action, user bubbles */
+  --ow-on-rain: #FFFFFF;
+  --ow-puddle: #E3ECFD;    /* accent wash, Mochi bubbles, meter track */
+  --ow-blush: #F4A3AE;     /* cheeks, gifts */
+  --ow-proof: #1A6B48;     /* verified */
+  --ow-proof-wash: #E7F3EC;
+  --ow-drizzle: #A8690F;   /* pending, low food */
+  --ow-drizzle-ink: #8A5509;
+  --ow-drizzle-wash: #FFF4DE;
+  --ow-storm: #D0342C;     /* errors, very hungry */
+  --ow-sleep: #5D6475;     /* hibernating */
+  --ow-sleep-ground: #ECEAE6;
+  --ow-none-wash: #EFEFF1; /* "no proof" tag */
+  --ow-none-ink: #4A4D57;
+  --ow-scrim: rgba(31, 34, 48, 0.45);
+
+  /* Proof surfaces (NEAR AI neutral + one blue) */
+  --proof-ground: #FFFFFF;
+  --proof-panel: #F6F6F7;
+  --proof-ink: #1D1D1F;
+  --proof-muted: #5F6068;
+  --proof-line: #E3E3E6;
+  --proof-accent: #035CA3;
+  --proof-on-accent: #FFFFFF;
+
+  /* Type */
+  --ow-font: "Nunito", system-ui, sans-serif;
+  --ow-font-proof: "Schibsted Grotesk", system-ui, sans-serif;
+  --ow-font-mono: "JetBrains Mono", ui-monospace, monospace;
+  --ow-text-display: 900 38px/1.05 var(--ow-font);   /* welcome headline */
+  --ow-text-title: 900 28px/1.1 var(--ow-font);      /* screen titles */
+  --ow-text-meter: 800 18px/1.3 var(--ow-font);      /* runway meter line */
+  --ow-text-body: 400 16px/1.45 var(--ow-font);      /* chat, body */
+  --ow-text-small: 400 13px/1.45 var(--ow-font);     /* fine print */
+  --ow-text-mono: 400 13px/1.4 var(--ow-font-mono);
+
+  /* Shape */
+  --ow-radius-sheet: 28px;
+  --ow-radius-card: 22px;
+  --ow-radius-tile: 20px;  /* Feed / Play / Talk */
+  --ow-radius-bubble: 20px;
+  --ow-radius-field: 14px;
+  --ow-radius-pill: 999px; /* buttons, chips */
+  --proof-radius-pane: 20px;
+  --proof-radius-card: 16px;
+  --proof-radius-control: 11px;
+
+  /* Spacing and sizes */
+  --ow-gutter: 20px;       /* screen side padding */
+  --ow-gap: 14px;
+  --ow-touch: 44px;        /* minimum touch target */
+  --ow-button-h: 54px;
+  --ow-action-h: 64px;     /* Feed / Play / Talk tiles */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ow-mist: #14161B;
+    --ow-paper: #1E2128;
+    --ow-ink: #F2F3F8;
+    --ow-dusk: #A9AEBD;
+    --ow-line: #2E323C;
+    --ow-rain: #8AB4FF;
+    --ow-on-rain: #0F1A33;
+    --ow-puddle: #1F2A44;
+    --ow-proof: #85C9A1;
+    --ow-proof-wash: #17342A;
+    --ow-drizzle: #FFC75C;
+    --ow-drizzle-ink: #FFC75C;
+    --ow-drizzle-wash: #3A2F17;
+    --ow-storm: #FF6B6B;
+    --ow-sleep: #A9AEBD;
+    --ow-sleep-ground: #191B20;
+    --ow-none-wash: #2A2D35;
+    --ow-none-ink: #C3C7D2;
+    --ow-scrim: rgba(0, 0, 0, 0.6);
+    --proof-ground: #111113;
+    --proof-panel: #1B1B1E;
+    --proof-ink: #F2F3F8;
+    --proof-muted: #A7A8B0;
+    --proof-line: #2C2C31;
+    --proof-accent: #7EBCFF;
+    --proof-on-accent: #111113;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ow-mist: #14161B;
+  --ow-paper: #1E2128;
+  --ow-ink: #F2F3F8;
+  --ow-dusk: #A9AEBD;
+  --ow-line: #2E323C;
+  --ow-rain: #8AB4FF;
+  --ow-on-rain: #0F1A33;
+  --ow-puddle: #1F2A44;
+  --ow-proof: #85C9A1;
+  --ow-proof-wash: #17342A;
+  --ow-drizzle: #FFC75C;
+  --ow-drizzle-ink: #FFC75C;
+  --ow-drizzle-wash: #3A2F17;
+  --ow-storm: #FF6B6B;
+  --ow-sleep: #A9AEBD;
+  --ow-sleep-ground: #191B20;
+  --ow-none-wash: #2A2D35;
+  --ow-none-ink: #C3C7D2;
+  --ow-scrim: rgba(0, 0, 0, 0.6);
+  --proof-ground: #111113;
+  --proof-panel: #1B1B1E;
+  --proof-ink: #F2F3F8;
+  --proof-muted: #A7A8B0;
+  --proof-line: #2C2C31;
+  --proof-accent: #7EBCFF;
+  --proof-on-accent: #111113;
+}

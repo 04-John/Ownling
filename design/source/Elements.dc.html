@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ownling UI elements</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2D63D8}a:hover{color:#1E4BB0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1100px; box-sizing: border-box; padding: 64px 72px; background: #F5F2EC; color: #1F2230; font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; gap: 32px">
+
+<div style="display: flex; justify-content: space-between; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #5B6072; letter-spacing: 0.04em">ELEMENTS · BUILD THESE ONCE</div>
+<h1 style="margin: 0; font-size: 52px; font-weight: 900; letter-spacing: -0.02em; line-height: 1">Food, meters, proof and controls</h1>
+</div>
+<div style="font-size: 15px; color: #5B6072; max-width: 380px; line-height: 1.5">Corners: sheet 28, card 22, control 14, chip 999. Touch targets 44 px or more.</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; flex: 1">
+
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 800">Food is rain</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #5B6072">A cloud that loves rain eats raindrops. Bigger drop, more days. No coins anywhere.</p>
+<div style="display: flex; justify-content: space-around; align-items: flex-end; background: #F5F2EC; border-radius: 16px; padding: 22px 10px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><svg width="34" height="34" viewBox="0 0 24 24" fill="#6AA6F2" stroke="#2B3145" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"></path></svg><span style="font-size: 14px; font-weight: 800">Drizzle</span><span style="font-size: 12px; color: #5B6072">+1 day</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><svg width="52" height="52" viewBox="0 0 24 24" fill="#6AA6F2" stroke="#2B3145" stroke-width="1.2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"></path></svg><span style="font-size: 14px; font-weight: 800">Shower</span><span style="font-size: 12px; color: #5B6072">+5 days</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px"><svg width="74" height="74" viewBox="0 0 24 24" fill="#6AA6F2" stroke="#2B3145" stroke-width="1" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"></path></svg><span style="font-size: 14px; font-weight: 800">Storm</span><span style="font-size: 12px; color: #5B6072">+25 days</span></div>
+</div>
+<div style="font-size: 14px; line-height: 1.5"><b>Feeding motion:</b> drops fall from the top of the screen into Mochi's mouth, the meter fills, then Mochi plays the eating moment for 1.5 s.</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 800">Runway meter</h2>
+<sc-for list="{{meters}}" as="m" hint-placeholder-count="4">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; justify-content: space-between; align-items: baseline">
+<span style="font-size: 16px; font-weight: 800">{{m.text}}</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #5B6072"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{m.dot}}"></span>{{m.mood}}</span>
+</div>
+<div style="height: 10px; border-radius: 999px; background: #E9EBEF; overflow: hidden"><div style="width: {{m.w}}; height: 100%; border-radius: 999px; background: {{m.fill}}"></div></div>
+</div>
+</sc-for>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5B6072">Days = food ÷ daily cap. The bar fills to 30 days. Before the food check loads, show "—", never 0.</p>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 800">Proof tag</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: #5B6072">Beside every reply. "Verified" only when the hardware signature checked out. Tapping opens the check.</p>
+<div style="display: flex; gap: 8px; flex-wrap: wrap">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: #E7F3EC; color: #1A6B48; font-size: 13px; font-weight: 800"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1A6B48"></span>Verified</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: #FFF4DE; color: #8A5509; font-size: 13px; font-weight: 800"><span style="width: 7px; height: 7px; border-radius: 50%; background: #A8690F"></span>Pending</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: #EFEFF1; color: #4A4D57; font-size: 13px; font-weight: 800"><span style="width: 7px; height: 7px; border-radius: 50%; background: #7E8597"></span>No proof</span>
+</div>
+<div style="display: flex; gap: 8px; flex-wrap: wrap; background: #14161B; border-radius: 14px; padding: 12px">
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: #17342A; color: #85C9A1; font-size: 13px; font-weight: 800"><span style="width: 7px; height: 7px; border-radius: 50%; background: #85C9A1"></span>Verified</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: #3A2F17; color: #FFC75C; font-size: 13px; font-weight: 800"><span style="width: 7px; height: 7px; border-radius: 50%; background: #FFC75C"></span>Pending</span>
+<span style="display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 12px; border-radius: 999px; background: #2A2D35; color: #C3C7D2; font-size: 13px; font-weight: 800"><span style="width: 7px; height: 7px; border-radius: 50%; background: #A9AEBD"></span>No proof</span>
+</div>
+<div style="background: #F5F2EC; border-radius: 14px; padding: 12px 14px; font-size: 13px; line-height: 1.5">Practice mode (no AI credit yet) always shows <b>No proof</b>, with a real on-chain charge and receipt.</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 800">Chat bubbles</h2>
+<div style="align-self: flex-end; max-width: 240px; background: #2D63D8; color: #FFFFFF; border-radius: 20px 20px 6px 20px; padding: 10px 14px; font-size: 15px; line-height: 1.45">Want to watch the rain later?</div>
+<div style="align-self: flex-start; max-width: 260px; background: #E3ECFD; border-radius: 20px 20px 20px 6px; padding: 10px 14px; font-size: 15px; line-height: 1.45"><i>*wiggles happily*</i> Yes. The loud kind.</div>
+<div style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #E7F3EC; color: #1A6B48; font-size: 12px; font-weight: 800"><span style="width: 7px; height: 7px; border-radius: 50%; background: #1A6B48"></span>Verified</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5B6072">You on the right in Rain. Mochi on the left in Puddle (home) or Paper (chat). Actions in italics.</p>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 800">Buttons</h2>
+<button style="height: 54px; border-radius: 999px; border: none; background: #2D63D8; color: #FFFFFF; font-family: Nunito, sans-serif; font-size: 17px; font-weight: 800">Wake up</button>
+<button style="height: 54px; border-radius: 999px; border: 1px solid #E4DFD6; background: #FFFFFF; color: #1F2230; font-family: Nunito, sans-serif; font-size: 17px; font-weight: 700">Use a NEAR wallet</button>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<button style="height: 64px; border-radius: 20px; background: #FFFFFF; border: 1px solid #E4DFD6; font-family: Nunito, sans-serif; font-size: 15px; font-weight: 800; color: #1F2230">Feed</button>
+<button style="height: 64px; border-radius: 20px; background: #FFFFFF; border: 1px solid #E4DFD6; font-family: Nunito, sans-serif; font-size: 15px; font-weight: 800; color: #5B6072">Rest 9:58</button>
+<button style="height: 64px; border-radius: 20px; background: #2D63D8; border: none; font-family: Nunito, sans-serif; font-size: 15px; font-weight: 800; color: #FFFFFF">Talk</button>
+</div>
+<p style="margin: 0; font-size: 13px; line-height: 1.5; color: #5B6072">One filled button per screen. Play shows its cooldown in place of the label.</p>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 22px; padding: 24px; display: flex; flex-direction: column; gap: 14px">
+<h2 style="margin: 0; font-size: 22px; font-weight: 800">Icons · 24 px, 2 px stroke</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c3 4 6 7.5 6 11a6 6 0 0 1-12 0c0-3.5 3-7 6-11z"></path></svg><span style="font-size: 12px; color: #5B6072">feed</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z"></path></svg><span style="font-size: 12px; color: #5B6072">play</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M5 5h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z"></path></svg><span style="font-size: 12px; color: #5B6072">talk</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"></rect><path d="M8 11V8a4 4 0 0 1 8 0v3"></path></svg><span style="font-size: 12px; color: #5B6072">diary</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"></path><path d="M9 12l2 2 4-4"></path></svg><span style="font-size: 12px; color: #5B6072">ownership</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M12 10v11M4 14h16M12 10c-2-4-7-4-6-1 1 2 6 1 6 1zM12 10c2-4 7-4 6-1-1 2-6 1-6 1z"></path></svg><span style="font-size: 12px; color: #5B6072">give</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6"></path></svg><span style="font-size: 12px; color: #5B6072">send</span></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 0; background: #F5F2EC; border-radius: 14px"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 13a8 8 0 1 0 3-6.2"></path><path d="M4 4v4h4"></path></svg><span style="font-size: 12px; color: #5B6072">wake</span></div>
+</div>
+</div>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      meters: [
+        { text: 'Mochi can think for 23 more days', mood: 'Content', dot: '#1A6B48', fill: '#2D63D8', w: '77%' },
+        { text: 'Mochi can think for 5 more days', mood: 'Peckish', dot: '#A8690F', fill: '#A8690F', w: '17%' },
+        { text: 'Mochi can think for 1 more day', mood: 'Very hungry', dot: '#D0342C', fill: '#D0342C', w: '4%' },
+        { text: "Mochi can't afford a thought", mood: 'Hibernating', dot: '#5D6475', fill: '#5D6475', w: '0%' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

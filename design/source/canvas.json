@@ -1,0 +1,26 @@
+{"v":3,"createdOnFiles":{"v":1,"at":"2026-11-07T12:00:00Z"},"title":"Ownling","launch":{"view":"canvas"},"pages":[],
+"boards":{
+"Main.dc.html":{"x":0,"y":0,"w":1440,"h":1560,"title":"Brand system"},
+"Character.dc.html":{"x":1520,"y":0,"w":1440,"h":1560,"title":"Mochi: stages and moods"},
+"Moments.dc.html":{"x":3040,"y":0,"w":1440,"h":1560,"title":"Mochi: moments, layers, dressing"},
+"Screen-01-Welcome.dc.html":{"x":0,"y":1960,"w":390,"h":844,"title":"01 Welcome","radius":36},
+"Screen-02-Adopt.dc.html":{"x":470,"y":1960,"w":390,"h":844,"title":"02 Adopt","radius":36},
+"Screen-03-Home.dc.html":{"x":940,"y":1960,"w":390,"h":844,"title":"03 Home","radius":36,"is_interactive":true},
+"Screen-04-Chat.dc.html":{"x":1410,"y":1960,"w":390,"h":844,"title":"04 Talk","radius":36},
+"Screen-05-Feed.dc.html":{"x":1880,"y":1960,"w":390,"h":844,"title":"05 Feed","radius":36,"is_interactive":true},
+"Screen-06-Hibernating.dc.html":{"x":2350,"y":1960,"w":390,"h":844,"title":"06 Hibernating","radius":36,"is_interactive":true},
+"Screen-07-Diary.dc.html":{"x":2820,"y":1960,"w":390,"h":844,"title":"07 Diary","radius":36,"is_interactive":true},
+"Screen-08-Ownership.dc.html":{"x":3290,"y":1960,"w":390,"h":844,"title":"08 Who controls Mochi","radius":36},
+"Screen-09-Gift.dc.html":{"x":3760,"y":1960,"w":390,"h":844,"title":"09 Give Mochi away","radius":36},
+"Elements.dc.html":{"x":0,"y":3220,"w":1440,"h":1100,"title":"UI elements"},
+"Wake.dc.html":{"x":1520,"y":3220,"w":1280,"h":1300,"title":"Wake-anywhere page","expand":"fill"},
+"Wallet.dc.html":{"x":2880,"y":3220,"w":512,"h":512,"title":"Wallet picture 512"},
+"Mochi.dc.html":{"x":3472,"y":3220,"w":320,"h":320,"title":"Mochi component"}
+},
+"order":["Main.dc.html","Character.dc.html","Moments.dc.html","Screen-01-Welcome.dc.html","Screen-02-Adopt.dc.html","Screen-03-Home.dc.html","Screen-04-Chat.dc.html","Screen-05-Feed.dc.html","Screen-06-Hibernating.dc.html","Screen-07-Diary.dc.html","Screen-08-Ownership.dc.html","Screen-09-Gift.dc.html","Elements.dc.html","Wake.dc.html","Wallet.dc.html","Mochi.dc.html"],
+"notes":{
+"t1":{"x":0,"y":-260,"text":"Ownling · brand, Mochi and its moments","kind":"title1","maxW":4480},
+"t2":{"x":0,"y":1700,"text":"The game app · nine screens","kind":"title1","maxW":4150},
+"t3":{"x":0,"y":2960,"text":"Elements, wake-anywhere page, wallet picture","kind":"title1","maxW":3792}
+},
+"designSystems":[]}

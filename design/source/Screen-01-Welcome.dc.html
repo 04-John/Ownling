@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ownling welcome</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2D63D8}a:hover{color:#1E4BB0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 56px 24px 36px; background: #F5F2EC; color: #1F2230; font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg width="30" height="30" viewBox="0 0 100 100" aria-hidden="true"><rect width="100" height="100" rx="24" fill="#2D63D8"></rect><g fill="#FFFFFF"><circle cx="50" cy="60" r="24"></circle><circle cx="32" cy="62" r="15"></circle><circle cx="68" cy="62" r="15"></circle><circle cx="40" cy="42" r="14"></circle><circle cx="60" cy="38" r="16"></circle></g><ellipse cx="42" cy="58" rx="4.4" ry="5.6" fill="#1F2230"></ellipse><ellipse cx="58" cy="58" rx="4.4" ry="5.6" fill="#1F2230"></ellipse></svg>
+<span style="font-size: 22px; font-weight: 900; letter-spacing: -0.03em">ownling</span>
+</div>
+<div style="flex: 1; display: flex; align-items: center; justify-content: center">
+<dc-import name="Mochi" stage="baby" mood="content" moment="none" size="250" hint-size="250px,250px"></dc-import>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<h1 style="margin: 0; font-size: 38px; line-height: 1.05; font-weight: 900; letter-spacing: -0.02em">A pet that owns itself.</h1>
+<p style="margin: 0; font-size: 17px; line-height: 1.5; color: #5B6072">You own Mochi, and Mochi keeps its own memory and food. If this app ever shuts down, Mochi wakes up somewhere else, still yours.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<a href="Screen-02-Adopt.dc.html" style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 999px; background: #2D63D8; color: #FFFFFF; font-size: 17px; font-weight: 800; text-decoration: none">Sign in with email</a>
+<a href="Screen-02-Adopt.dc.html" style="display: flex; align-items: center; justify-content: center; height: 54px; border-radius: 999px; background: #FFFFFF; border: 1px solid #E4DFD6; color: #1F2230; font-size: 17px; font-weight: 700; text-decoration: none">Use a NEAR wallet</a>
+<p style="margin: 4px 0 0; font-size: 13px; line-height: 1.45; color: #5B6072; text-align: center">You sign once. After that, no pop-ups while you play.</p>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

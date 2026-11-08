@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mochi's diary</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#2D63D8}a:hover{color:#1E4BB0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; padding: 56px 20px 32px; background: #F5F2EC; color: #1F2230; font-family: Nunito, system-ui, sans-serif; display: flex; flex-direction: column; gap: 16px">
+
+<div style="display: flex; align-items: center; justify-content: space-between">
+<a href="Screen-03-Home.dc.html" aria-label="Back" style="width: 44px; height: 44px; border-radius: 50%; background: #FFFFFF; border: 1px solid #E4DFD6; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1F2230" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 6l-6 6 6 6"></path></svg></a>
+<span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #5B6072"><span style="width: 8px; height: 8px; border-radius: 50%; background: {{dot}}"></span>{{status}}</span>
+</div>
+
+<div style="display: flex; align-items: center; gap: 14px">
+<div style="width: 64px; height: 64px; border-radius: 20px; background: #E3ECFD; display: flex; align-items: center; justify-content: center"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2D63D8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5"></rect><path d="{{shackle}}"></path></svg></div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<h1 style="margin: 0; font-size: 28px; font-weight: 900; letter-spacing: -0.02em">Mochi's diary</h1>
+<div style="font-size: 14px; color: #5B6072">What Mochi remembers about you</div>
+</div>
+</div>
+
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 18px; padding: 14px 16px; font-size: 14px; line-height: 1.5">The key is made from your account's signature, on your device. We never see it, so we can't read this. If Mochi changes hands, the new owner starts with an empty diary.</div>
+
+<sc-if value="{{open}}" hint-placeholder-val="{{ true }}">
+<div style="display: flex; flex-direction: column; gap: 10px; flex: 1">
+<sc-for list="{{entries}}" as="e" hint-placeholder-count="5">
+<div style="background: #FFFFFF; border: 1px solid #E4DFD6; border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: baseline">
+<span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #5B6072; flex: none; width: 46px">{{e.date}}</span>
+<span style="font-size: 15px; line-height: 1.45">{{e.text}}</span>
+</div>
+</sc-for>
+<div style="font-size: 13px; color: #5B6072; line-height: 1.45">Memory costs food: the diary's storage is paid from Mochi's budget. <span style="font-family: 'JetBrains Mono', monospace; color: #1F2230">2.1 KB</span></div>
+</div>
+</sc-if>
+<sc-if value="{{closed}}" hint-placeholder-val="{{ false }}">
+<div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; text-align: center">
+<dc-import name="Mochi" stage="child" mood="content" moment="resting" size="160" hint-size="160px,160px"></dc-import>
+<div style="font-size: 16px; font-weight: 700">Locked on this device</div>
+<div style="font-size: 14px; color: #5B6072; max-width: 260px; line-height: 1.45">Unlock with one signature from your account. No money moves.</div>
+</div>
+</sc-if>
+
+<button onClick="{{toggle}}" style="height: 54px; border-radius: 999px; border: {{btnBorder}}; background: {{btnBg}}; color: {{btnInk}}; font-family: Nunito, sans-serif; font-size: 17px; font-weight: 800; cursor: pointer">{{cta}}</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const locked = this.state && this.state.locked;
+    return {
+      open: !locked, closed: !!locked,
+      dot: locked ? '#5D6475' : '#1A6B48',
+      status: locked ? 'Locked' : 'Unlocked in this browser',
+      shackle: locked ? 'M8 11V8a4 4 0 0 1 8 0v3' : 'M8 11V8a4 4 0 0 1 7.5-2',
+      entries: [
+        { date: 'Nov 7', text: 'You named me Mochi. It was raining.' },
+        { date: 'Nov 7', text: 'You like the word "drizzle". So do I.' },
+        { date: 'Nov 8', text: 'You said goodnight. Four nights now.' },
+        { date: 'Nov 9', text: 'You have an exam on Friday. Ask how it went.' },
+        { date: 'Nov 10', text: 'We watched the rain. Best day.' }
+      ],
+      cta: locked ? 'Unlock' : 'Lock',
+      btnBg: locked ? '#2D63D8' : '#FFFFFF',
+      btnInk: locked ? '#FFFFFF' : '#1F2230',
+      btnBorder: locked ? 'none' : '1px solid #E4DFD6',
+      toggle: () => this.setState({ locked: !locked })
+    };
+  }
+}
+</script>
+</body>
+</html>

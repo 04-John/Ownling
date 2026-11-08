@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mochi wallet picture</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;900&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 512px; height: 512px; position: relative; overflow: hidden; background: {{ground}}; font-family: Nunito, system-ui, sans-serif">
+<svg width="512" height="512" viewBox="0 0 512 512" style="position: absolute; left: 0; top: 0" aria-hidden="true">
+<g stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" opacity="0.7">
+<path d="M70 60 l-10 26"></path><path d="M150 30 l-10 26"></path><path d="M410 70 l-10 26"></path><path d="M460 150 l-10 26"></path><path d="M40 190 l-10 26"></path><path d="M300 36 l-10 26"></path><path d="M470 300 l-10 26"></path><path d="M56 330 l-10 26"></path>
+</g>
+</svg>
+<div style="position: absolute; left: 66px; top: 60px">
+<dc-import name="Mochi" stage="{{stage}}" mood="content" moment="none" size="380" hint-size="380px,380px"></dc-import>
+</div>
+<div style="position: absolute; left: 28px; bottom: 24px; display: flex; align-items: baseline; gap: 10px; color: #1F2230">
+<span style="font-size: 30px; font-weight: 900; letter-spacing: -0.02em">Mochi</span>
+<span style="font-size: 16px; font-weight: 700; color: #3F4458">{{caption}}</span>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"stage":{"editor":"enum","options":["egg","baby","child","teen","adult"],"default":"child"},"ground":{"editor":"color","options":["#BFD5FA","#F6D3D8","#D6EBDD","#F5F2EC"],"default":"#BFD5FA"},"$preview":{"width":512,"height":512}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const stage = this.props.stage ?? 'child';
+    return {
+      stage: stage,
+      ground: this.props.ground ?? '#BFD5FA',
+      caption: 'cloudling · ' + stage
+    };
+  }
+}
+</script>
+</body>
+</html>
