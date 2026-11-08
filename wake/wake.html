@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Wake your pet without us</title>
+    <meta name="description" content="Wakes an ownling from its NEAR contract and NEAR AI alone. No Ownling server is used." />
+  </head>
+  <body>
+    <header class="bar">
+      <span class="mono strong">wake.html</span>
+      <span class="mono muted">One file. Runs in your browser. Talks to NEAR and NEAR AI directly.</span>
+    </header>
+
+    <main>
+      <h1>Wake your pet without us.</h1>
+      <p class="lead">
+        This page is not the Ownling app and uses none of its servers. It reads your pet from its contract on NEAR
+        and asks NEAR AI for replies. If Mochi answers here, it never depended on us.
+      </p>
+
+      <ul class="chips" aria-label="What this page can reach">
+        <li id="chip-app"><span class="dot"></span><span>Ownling app · checking</span></li>
+        <li id="chip-contract"><span class="dot"></span><span>Pet contract · checking</span></li>
+        <li id="chip-ai"><span class="dot"></span><span>NEAR AI · checking</span></li>
+      </ul>
+
+      <div class="grid">
+        <div class="stack">
+          <section class="card" aria-labelledby="step-1">
+            <h2 id="step-1" class="eyebrow">1 · Your account</h2>
+            <form id="signin">
+              <label for="phrase">Recovery phrase</label>
+              <textarea id="phrase" rows="3" autocomplete="off" spellcheck="false" placeholder="12 words, from when you created your account"></textarea>
+              <button type="submit" class="primary" id="signin-button">Sign in</button>
+            </form>
+            <p class="note" id="signin-note">One signature, made here. It also rebuilds your diary key in this tab. The phrase never leaves this tab.</p>
+            <p class="error" id="signin-error" role="alert" hidden></p>
+            <label for="ai-key" class="spaced">Your NEAR AI key</label>
+            <input id="ai-key" type="password" autocomplete="off" placeholder="Pays for replies on this page" />
+            <p class="note">Sent only to NEAR AI. Get one at cloud.near.ai.</p>
+          </section>
+
+          <section class="card" aria-labelledby="step-2">
+            <h2 id="step-2" class="eyebrow">2 · Read from NEAR</h2>
+            <dl class="facts" id="facts">
+              <dt>contract</dt><dd id="f-contract">—</dd>
+              <dt>token</dt><dd id="f-token">—</dd>
+              <dt>owner</dt><dd id="f-owner">—</dd>
+              <dt>growth</dt><dd id="f-growth">—</dd>
+              <dt>food</dt><dd id="f-food">—</dd>
+              <dt>diary</dt><dd id="f-diary">—</dd>
+              <dt>model</dt><dd id="f-model">—</dd>
+            </dl>
+          </section>
+        </div>
+
+        <section class="card talk" aria-labelledby="step-3">
+          <h2 id="step-3" class="eyebrow">3 · Talk</h2>
+          <div class="pet" id="pet" aria-live="polite"></div>
+          <ol class="bubbles" id="bubbles" aria-live="polite"></ol>
+          <form id="composer" class="composer">
+            <label for="message" class="visually-hidden">Message</label>
+            <input id="message" autocomplete="off" placeholder="Say something" disabled />
+            <button type="submit" id="send" disabled>Send</button>
+          </form>
+          <p class="error" id="talk-error" role="alert" hidden></p>
+        </section>
+      </div>
+
+      <div class="info">
+        <section class="card">
+          <h2>Who pays here</h2>
+          <p>You do, with your own NEAR AI key. Only Mochi's chosen kitchen can charge its food, and that kitchen is off, so Mochi's food isn't touched. The key stays in this tab and is sent only to NEAR AI.</p>
+        </section>
+        <section class="card">
+          <h2>What happens in this tab</h2>
+          <p>Your message is sealed for NEAR AI's hardware here, the reply comes back here, and the hardware signature is checked here. No server of ours is involved.</p>
+        </section>
+      </div>
+      <section class="card">
+        <h2>To stay long term</h2>
+        <p>Use Change kitchen to move Mochi to another kitchen. Its own food pays for its thoughts again. You confirm the change.</p>
+      </section>
+
+      <p class="footer">Testnet. Source: <a href="https://github.com/04-John/Ownling">github.com/04-John/Ownling</a>, folder wake/.</p>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

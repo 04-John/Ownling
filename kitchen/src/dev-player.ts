@@ -1,7 +1,9 @@
 // Development check of a brand-new player's whole journey against a running kitchen: make a key
 // locally, sign up, adopt, sign in, talk, and read the wallet picture. Mirrors what the app does.
-// Usage: node --env-file=../.env src/dev-player.ts
+// Usage: node --env-file=../.env src/dev-player.ts   (DEV_PHRASE_OUT=<file> also saves the test
+// account's phrase there, for browser tests; testnet only, never inside the repo)
 import { randomBytes } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { Account } from 'near-api-js';
 import { signMessage } from 'near-api-js/nep413';
 import { generateSeedPhrase } from 'near-api-js/seed-phrase';
@@ -17,6 +19,7 @@ console.log(`phrase has ${seedPhrase.split(' ').length} words; public key ${publ
 
 const { accountId } = await post('/signup', { publicKey });
 console.log(`signed up as ${accountId}`);
+if (process.env.DEV_PHRASE_OUT) writeFileSync(process.env.DEV_PHRASE_OUT, JSON.stringify({ accountId, seedPhrase }));
 const player = new Account(accountId, provider, keyPair.toString() as `ed25519:${string}`);
 
 const pet = (await player.callFunction({

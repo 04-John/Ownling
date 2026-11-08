@@ -1,0 +1,25 @@
+{
+  "name": "ownling-wake",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Wake-anywhere client: wakes an ownling from the chain and NEAR AI alone, with no Ownling server",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/jetbrains-mono": "5.3.0",
+    "@fontsource/schibsted-grotesk": "5.3.0",
+    "@nearai/inference-sdk": "0.2.1",
+    "near-api-js": "7.4.0"
+  },
+  "devDependencies": {
+    "typescript": "7.0.2",
+    "vite": "8.3.5",
+    "vite-plugin-node-polyfills": "0.28.0",
+    "vite-plugin-singlefile": "2.3.4"
+  },
+  "license": "MIT"
+}

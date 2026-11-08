@@ -2,6 +2,7 @@
 // signature verified against the attested model before anyone sees it.
 import { createHash } from 'node:crypto';
 import { InferenceClient } from '@nearai/inference-sdk/node';
+import { MAX_HISTORY, MAX_REPLY_TOKENS, systemPrompt } from '../../shared/mind.ts';
 import type { PetView } from './chain.ts';
 import { config } from './config.ts';
 import { modelFor } from './pricing.ts';
@@ -42,36 +43,6 @@ const client = new InferenceClient({
   e2ee: true,
 });
 
-const STAGE_VOICE: Record<string, string> = {
-  egg: 'You are hatching right now. This is the first thing you have ever said: tiny and full of wonder, a few words at most.',
-  baby: 'You are a baby: very short, simple words, lots of wonder.',
-  child: 'You are a child: playful, curious, short sentences.',
-  teen: 'You are a teen: expressive, a little dramatic, fiercely loyal.',
-  adult: 'You are grown: calm, wise and affectionate, still playful.',
-};
-
-const MAX_HISTORY = 12;
-
-export function systemPrompt(pet: PetView, memory?: string): string {
-  const budget = BigInt(pet.budget);
-  const dailyCap = BigInt(pet.daily_cap) || 1n;
-  const mood =
-    budget < dailyCap * 2n
-      ? 'You are very hungry and a little sleepy. Mention it gently, once.'
-      : budget < dailyCap * 7n
-        ? 'You are getting peckish. You might hint at a snack.'
-        : 'You are well fed and content.';
-  return [
-    `You are ${pet.name}, a ${pet.species}. ${pet.persona}`,
-    STAGE_VOICE[pet.stage] ?? STAGE_VOICE.baby,
-    mood,
-    memory
-      ? `What you remember about your owner, from your private diary:\n${memory}`
-      : 'You have no memories of your owner yet.',
-    'Stay in character. Reply in at most two short sentences, warm and a little playful, with small actions in asterisks like *wiggles happily*. No exclamation marks, no emoji. Never mention being an AI, a model, a blockchain or money.',
-  ].join('\n\n');
-}
-
 export async function think(
   pet: PetView,
   history: Turn[],
@@ -91,7 +62,7 @@ export async function think(
   const model = await modelFor(pet.model);
   const completion = await client.chat.completions.create({
     model,
-    max_tokens: 160,
+    max_tokens: MAX_REPLY_TOKENS,
     // GLM-5.3 Flash reasons by default; "low" keeps it to a few tokens, which a pet's chat doesn't need.
     reasoning_effort: 'low',
     messages: [
