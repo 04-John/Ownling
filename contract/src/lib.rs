@@ -19,7 +19,7 @@ use near_contract_standards::non_fungible_token::metadata::{
 use near_contract_standards::non_fungible_token::{NonFungibleToken, Token, TokenId};
 use near_sdk::json_types::{U64, U128};
 use near_sdk::serde_json::{Value, json};
-use near_sdk::store::LookupMap;
+use near_sdk::store::{LazyOption, LookupMap};
 use near_sdk::{
     AccountId, BorshStorageKey, NearToken, PanicOnDefault, Promise, PromiseOrValue,
     assert_one_yocto, env, near, require,
@@ -51,6 +51,21 @@ enum StorageKey {
     Pets,
     Diaries,
     Earnings,
+    Art,
+}
+
+/// The wallet pictures, as data URIs, stored once and chosen per pet when a wallet asks: the
+/// picture follows the pet's stage, and a hibernating pet shows asleep.
+#[near(serializers = [borsh, json])]
+pub struct StageArt {
+    pub egg: String,
+    pub baby: String,
+    pub child: String,
+    pub teen: String,
+    pub adult: String,
+    pub asleep: String,
+    /// The collection icon shown by wallets and marketplaces.
+    pub icon: Option<String>,
 }
 
 #[near(serializers = [borsh])]
@@ -143,12 +158,14 @@ pub struct Contract {
     earnings: LookupMap<AccountId, NearToken>,
     default_kitchen: AccountId,
     next_id: u64,
+    /// Loaded only by the NFT views, so ordinary calls don't pay to read the pictures.
+    art: LazyOption<StageArt>,
 }
 
 #[near]
 impl Contract {
     #[init]
-    pub fn new(default_kitchen: AccountId) -> Self {
+    pub fn new(default_kitchen: AccountId, art: StageArt) -> Self {
         Self {
             tokens: NonFungibleToken::new(
                 StorageKey::OwnerById,
@@ -171,6 +188,7 @@ impl Contract {
             earnings: LookupMap::new(StorageKey::Earnings),
             default_kitchen,
             next_id: 1,
+            art: LazyOption::new(StorageKey::Art, Some(art)),
         }
     }
 
@@ -427,6 +445,27 @@ impl Contract {
         self.pets.get_mut(token_id).unwrap_or_else(|| env::panic_str("No such pet"))
     }
 
+    /// The token as wallets see it: its picture follows the pet's stage, or asleep when hibernating.
+    fn with_art(&self, mut token: Token) -> Token {
+        if let (Some(art), Some(pet), Some(metadata)) =
+            (self.art.get().as_ref(), self.pets.get(&token.token_id), token.metadata.as_mut())
+        {
+            let picture = if pet.budget < HIBERNATE_BELOW {
+                &art.asleep
+            } else {
+                match pet.stage() {
+                    "egg" => &art.egg,
+                    "baby" => &art.baby,
+                    "child" => &art.child,
+                    "teen" => &art.teen,
+                    _ => &art.adult,
+                }
+            };
+            metadata.media = Some(picture.clone());
+        }
+        token
+    }
+
     /// Charge or refund the pet's budget for the storage change since `storage_before`.
     fn settle_storage(&mut self, token_id: &TokenId, storage_before: u64) -> NearToken {
         let storage_after = env::storage_usage();
@@ -505,7 +544,7 @@ impl NonFungibleTokenCore for Contract {
     }
 
     fn nft_token(&self, token_id: TokenId) -> Option<Token> {
-        self.tokens.nft_token(token_id)
+        self.tokens.nft_token(token_id).map(|token| self.with_art(token))
     }
 }
 
@@ -530,7 +569,7 @@ impl NonFungibleTokenEnumeration for Contract {
     }
 
     fn nft_tokens(&self, from_index: Option<U128>, limit: Option<u64>) -> Vec<Token> {
-        self.tokens.nft_tokens(from_index, limit)
+        self.tokens.nft_tokens(from_index, limit).into_iter().map(|t| self.with_art(t)).collect()
     }
 
     fn nft_supply_for_owner(&self, account_id: AccountId) -> U128 {
@@ -543,14 +582,20 @@ impl NonFungibleTokenEnumeration for Contract {
         from_index: Option<U128>,
         limit: Option<u64>,
     ) -> Vec<Token> {
-        self.tokens.nft_tokens_for_owner(account_id, from_index, limit)
+        self.tokens
+            .nft_tokens_for_owner(account_id, from_index, limit)
+            .into_iter()
+            .map(|t| self.with_art(t))
+            .collect()
     }
 }
 
 #[near]
 impl NonFungibleTokenMetadataProvider for Contract {
     fn nft_metadata(&self) -> NFTContractMetadata {
-        self.metadata.clone()
+        let mut metadata = self.metadata.clone();
+        metadata.icon = self.art.get().as_ref().and_then(|art| art.icon.clone());
+        metadata
     }
 }
 
@@ -583,7 +628,42 @@ mod tests {
 
     fn setup() -> Contract {
         ctx(&accounts(0), ZERO, T0);
-        Contract::new(kitchen())
+        Contract::new(
+            kitchen(),
+            StageArt {
+                egg: "art:egg".into(),
+                baby: "art:baby".into(),
+                child: "art:child".into(),
+                teen: "art:teen".into(),
+                adult: "art:adult".into(),
+                asleep: "art:asleep".into(),
+                icon: Some("art:icon".into()),
+            },
+        )
+    }
+
+    fn media(c: &Contract, id: &str) -> String {
+        c.nft_token(id.into()).unwrap().metadata.unwrap().media.unwrap()
+    }
+
+    #[test]
+    fn the_wallet_picture_follows_the_pet() {
+        let mut c = setup();
+        let pet = adopt(&mut c, &accounts(1), NearToken::from_millinear(50));
+        let id = pet.token_id.clone();
+        assert_eq!(media(&c, &id), "art:egg");
+        assert_eq!(c.nft_metadata().icon.as_deref(), Some("art:icon"));
+
+        ctx(&accounts(1), ONE_YOCTO, T0);
+        c.set_daily_cap(id.clone(), NearToken::from_near(1));
+        ctx(&kitchen(), ZERO, T0);
+        c.charge(id.clone(), NearToken::from_millinear(1), "r1".into());
+        assert_eq!(media(&c, &id), "art:baby");
+        assert_eq!(c.nft_tokens_for_owner(accounts(1), None, None)[0].metadata.as_ref().unwrap().media.as_deref(), Some("art:baby"));
+
+        let rest = c.get_pet(id.clone()).unwrap().budget;
+        c.charge(id.clone(), rest, "r2".into());
+        assert_eq!(media(&c, &id), "art:asleep");
     }
 
     fn adopt(c: &mut Contract, who: &AccountId, deposit: NearToken) -> PetView {

@@ -30,8 +30,8 @@ export type Thought = {
 /** Practice mode (KITCHEN_MOCK=1): canned replies, no AI call, never presented as verified. */
 export const PRACTICE_MODE = process.env.KITCHEN_MOCK === '1';
 const PRACTICE_REPLIES = [
-  '*floats closer* Hello! I was just watching the clouds.',
-  'Ooh, tell me more! *wiggles happily*',
+  '*floats closer* Hello. I was just watching the clouds.',
+  'Ooh, tell me more. *wiggles happily*',
   'I like it when you visit. It feels like rain on a warm day.',
   '*yawns softly* I remember you. You are kind.',
 ];
@@ -68,7 +68,7 @@ export function systemPrompt(pet: PetView, memory?: string): string {
     memory
       ? `What you remember about your owner, from your private diary:\n${memory}`
       : 'You have no memories of your owner yet.',
-    'Stay in character. Reply in at most two short sentences. Never mention being an AI, a model, a blockchain or money.',
+    'Stay in character. Reply in at most two short sentences, warm and a little playful, with small actions in asterisks like *wiggles happily*. No exclamation marks, no emoji. Never mention being an AI, a model, a blockchain or money.',
   ].join('\n\n');
 }
 

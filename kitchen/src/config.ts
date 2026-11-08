@@ -19,4 +19,9 @@ export const config = {
   nearUsd: Number(process.env.NEAR_USD ?? '3.68'),
   /** Kitchen margin over the raw inference cost. */
   markup: Number(process.env.KITCHEN_MARKUP ?? '1.25'),
+  /** Parent of new players' accounts (cloud-1234.<sponsor>); sign-up is off without its key. */
+  sponsorAccountId: process.env.SPONSOR_ACCOUNT_ID ?? '',
+  sponsorPrivateKey: process.env.SPONSOR_PRIVATE_KEY ?? '',
+  /** Test NEAR each new player starts with: adoption (0.5) plus a few feeds and gas. */
+  playerStarterNear: process.env.PLAYER_STARTER_NEAR ?? '1',
 };

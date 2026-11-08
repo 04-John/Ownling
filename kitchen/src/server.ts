@@ -1,5 +1,6 @@
 // The kitchen's HTTP API.
 //   GET  /health
+//   POST /signup   {publicKey} -> {accountId}   (a new player's named testnet account)
 //   POST /session  {accountId, publicKey, signature, nonce, issuedAt} -> {token, expiresAt}
 //   POST /talk     Authorization: Bearer <token>; {tokenId, message, history?, memory?}
 //                  -> {reply, model, usage, charged, budget, proof}
@@ -10,6 +11,7 @@ import { PRACTICE_MODE, think, type Turn } from './brain.ts';
 import { charge, getPet } from './chain.ts';
 import { config } from './config.ts';
 import { costUsd, modelFor, usdToYocto } from './pricing.ts';
+import { createPlayer, SignupError, signupOpen } from './signup.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 const APP_ORIGIN = process.env.APP_ORIGIN ?? '*';
@@ -94,6 +96,13 @@ function parseTalk(body: unknown): { tokenId: string; message: string; history: 
   };
 }
 
+/** The caller's address, behind a hosting proxy when there is one. */
+function clientAddress(req: IncomingMessage): string {
+  const forwarded = req.headers['x-forwarded-for'];
+  const first = (Array.isArray(forwarded) ? forwarded[0] : forwarded)?.split(',')[0]?.trim();
+  return first || req.socket.remoteAddress || 'unknown';
+}
+
 function bearer(req: IncomingMessage): string | undefined {
   const header = req.headers.authorization;
   return header?.startsWith('Bearer ') ? header.slice(7) : undefined;
@@ -133,7 +142,12 @@ const server = createServer(async (req, res) => {
         kitchen: config.kitchenAccountId,
         contract: config.petsContract,
         practiceMode: PRACTICE_MODE,
+        signupOpen: signupOpen(),
       });
+    }
+    if (req.method === 'POST' && req.url === '/signup') {
+      const { publicKey } = (await readJson(req)) as { publicKey?: unknown };
+      return send(res, 200, await createPlayer(publicKey, clientAddress(req)));
     }
     if (req.method === 'POST' && req.url === '/session') {
       return send(res, 200, await startSession((await readJson(req)) as SignIn));
@@ -143,7 +157,7 @@ const server = createServer(async (req, res) => {
     }
     send(res, 404, { error: 'Not found' });
   } catch (err) {
-    if (err instanceof HttpError) return send(res, err.status, { error: err.message });
+    if (err instanceof HttpError || err instanceof SignupError) return send(res, err.status, { error: err.message });
     if (err instanceof AuthError) return send(res, 401, { error: err.message });
     console.error(err);
     send(res, 500, { error: (err as Error).message ?? 'Kitchen error' });
