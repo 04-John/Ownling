@@ -246,7 +246,8 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 }
 .bubble--paper { background: var(--ow-paper); border: 1px solid var(--ow-line); }
 .bubble--puddle { background: var(--ow-puddle); }
-.bubble--home { align-self: flex-start; max-width: 300px; padding: 12px 14px; }
+/* Above .rain-fall (z-index 1), so feeding drops pass behind Mochi's words, not over them. */
+.bubble--home { align-self: flex-start; max-width: 300px; padding: 12px 14px; position: relative; z-index: 2; }
 
 /* ---------- ProofTag ---------- */
 .proof-row { display: flex; padding-left: 4px; }

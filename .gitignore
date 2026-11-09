@@ -6,3 +6,4 @@ dist/
 !.env.example
 *.pem
 PLAN.md
+*.local.txt

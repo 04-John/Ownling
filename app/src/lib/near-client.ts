@@ -48,7 +48,8 @@ export function createNearClient(): OwnlingClient {
     network: 'testnet',
     contractId: env.VITE_CONTRACT_ID ?? 'pets.ownling.testnet',
     kitchenId: env.VITE_KITCHEN_ID ?? 'kitchen.ownling.testnet',
-    kitchenUrl: env.VITE_KITCHEN_URL ?? 'http://localhost:8787',
+    // The hosted kitchen serves this app, so a built app calls its own address.
+    kitchenUrl: env.VITE_KITCHEN_URL ?? (env.DEV ? 'http://localhost:8787' : ''),
     practiceMode: false,
   };
   const provider = new JsonRpcProvider({ url: RPC_URL });

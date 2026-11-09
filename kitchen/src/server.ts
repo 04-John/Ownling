@@ -4,8 +4,11 @@
 //   POST /session  {accountId, publicKey, signature, nonce, issuedAt} -> {token, expiresAt}
 //   POST /talk     Authorization: Bearer <token>; {tokenId, message, history?, memory?}
 //                  -> {reply, model, usage, charged, budget, proof}
+//   GET  anything else -> the built game app from STATIC_DIR, when set (one address for app and kitchen)
 // The kitchen never logs what owners or pets say.
+import { readFile } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
+import { extname, resolve, sep } from 'node:path';
 import { AuthError, sessionAccount, startSession, type SignIn } from './auth.ts';
 import { PRACTICE_MODE, think, type Turn } from './brain.ts';
 import { charge, getPet } from './chain.ts';
@@ -15,6 +18,19 @@ import { createPlayer, SignupError, signupOpen } from './signup.ts';
 
 const PORT = Number(process.env.PORT ?? 8787);
 const APP_ORIGIN = process.env.APP_ORIGIN ?? '*';
+const STATIC_DIR = process.env.STATIC_DIR ? resolve(process.env.STATIC_DIR) : null;
+const CONTENT_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+  '.json': 'application/json',
+  '.webmanifest': 'application/manifest+json',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+};
 const MAX_BODY_BYTES = 64 * 1024;
 const MAX_MESSAGE = 500;
 const MAX_MEMORY = 4_000;
@@ -133,6 +149,32 @@ function send(res: ServerResponse, status: number, body: unknown) {
   res.end(JSON.stringify(body));
 }
 
+/** Serves a file from the built app. The app routes with #hash, so unknown paths get index.html. */
+async function sendStatic(req: IncomingMessage, res: ServerResponse, root: string) {
+  let path: string;
+  try {
+    path = decodeURIComponent(new URL(req.url ?? '/', 'http://x').pathname);
+  } catch {
+    throw new HttpError(400, 'Bad path');
+  }
+  let file = resolve(root, `.${path}`);
+  if (file !== root && !file.startsWith(root + sep)) throw new HttpError(404, 'Not found');
+  let data: Buffer;
+  try {
+    data = await readFile(file);
+  } catch {
+    file = resolve(root, 'index.html');
+    data = await readFile(file);
+  }
+  res.writeHead(200, {
+    'content-type': CONTENT_TYPES[extname(file)] ?? 'application/octet-stream',
+    // Vite puts a content hash in every file name under assets/, so those never change.
+    'cache-control': file.startsWith(resolve(root, 'assets') + sep) ? 'public, max-age=31536000, immutable' : 'no-cache',
+    'x-content-type-options': 'nosniff',
+  });
+  res.end(req.method === 'HEAD' ? undefined : data);
+}
+
 const server = createServer(async (req, res) => {
   try {
     if (req.method === 'OPTIONS') return send(res, 204, {});
@@ -155,6 +197,7 @@ const server = createServer(async (req, res) => {
     if (req.method === 'POST' && req.url === '/talk') {
       return send(res, 200, await talk(req, await readJson(req)));
     }
+    if (STATIC_DIR && (req.method === 'GET' || req.method === 'HEAD')) return await sendStatic(req, res, STATIC_DIR);
     send(res, 404, { error: 'Not found' });
   } catch (err) {
     if (err instanceof HttpError || err instanceof SignupError) return send(res, err.status, { error: err.message });
@@ -166,4 +209,5 @@ const server = createServer(async (req, res) => {
 
 server.listen(PORT, () => {
   console.log(`Ownling kitchen ${config.kitchenAccountId} on http://localhost:${PORT} (contract ${config.petsContract})`);
+  if (STATIC_DIR) console.log(`Serving the game app from ${STATIC_DIR}`);
 });
