@@ -19,7 +19,7 @@ const params = new URLSearchParams(location.search);
 const CONTRACT = params.get('contract') ?? 'pets.ownling.testnet';
 const RPC_URL = params.get('rpc') ?? 'https://test.rpc.fastnear.com';
 /** The Ownling kitchen. Only checked, to show whether it's off; never used. */
-const APP_URL = params.get('app') ?? 'http://localhost:8787';
+const APP_URL = params.get('app') ?? 'https://ownling.onrender.com';
 const NEAR_AI = 'https://cloud-api.near.ai/v1';
 const KEY_LOOKUP = 'https://test.api.fastnear.com/v0/public_key';
 const GAS = 100_000_000_000_000n;
