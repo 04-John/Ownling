@@ -1,0 +1,11 @@
+{
+  "appId": "com.ownling.app",
+  "appName": "Ownling",
+  "webDir": "dist-android",
+  "plugins": {
+    "SystemBars": {
+      "insetsHandling": "css",
+      "initialViewportFitValueHint": "cover"
+    }
+  }
+}

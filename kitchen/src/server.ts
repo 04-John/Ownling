@@ -4,7 +4,8 @@
 //   POST /session  {accountId, publicKey, signature, nonce, issuedAt} -> {token, expiresAt}
 //   POST /talk     Authorization: Bearer <token>; {tokenId, message, history?, memory?}
 //                  -> {reply, model, usage, charged, budget, proof}
-//   GET  anything else -> the built game app from STATIC_DIR, when set (one address for app and kitchen)
+//   GET  anything else -> the built game app from STATIC_DIR, when set (one address for app and kitchen);
+//        /download opens its Get the app screen
 // The kitchen never logs what owners or pets say.
 import { readFile } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
@@ -196,6 +197,10 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === 'POST' && req.url === '/talk') {
       return send(res, 200, await talk(req, await readJson(req)));
+    }
+    if (STATIC_DIR && req.method === 'GET' && /^\/download\/?$/.test(req.url ?? '')) {
+      res.writeHead(302, { location: '/#/download' });
+      return res.end();
     }
     if (STATIC_DIR && (req.method === 'GET' || req.method === 'HEAD')) return await sendStatic(req, res, STATIC_DIR);
     send(res, 404, { error: 'Not found' });

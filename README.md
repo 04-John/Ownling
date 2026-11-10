@@ -5,6 +5,7 @@ Ownling is a virtual pet whose AI personality, memory and food budget are stored
 People who spend months talking to an AI companion don't own it. The company that runs it holds its memory and can change it, charge more for it or shut it down. Ownling puts the parts that matter on chain and in the owner's hands. The pet is an NFT. It pays for its own AI from a NEAR budget the owner tops up. Its diary is encrypted with a key only the owner can rebuild. Any client can wake it, not just ours.
 
 - **Live demo (testnet):** https://ownling.onrender.com
+- **Get the app:** https://ownling.onrender.com/download. There's an Android app (`Ownling.apk`) and a Windows installer (`Ownling-Setup.exe`), both attached to this repo's GitHub releases. On iPhone and Mac, you install it from the browser.
 - **Pet contract:** [`pets.ownling.testnet`](https://testnet.nearblocks.io/address/pets.ownling.testnet)
 - **License:** MIT
 
@@ -100,6 +101,9 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Giving a pet away (Give screen) | The contract side is tested. The screen isn't yet tested end to end. |
 | Contract without full-access keys | Not yet. The key is removed before submission; check it with `near account list-keys pets.ownling.testnet network-config testnet now`. |
 | Daily cap setting in the app | Not built. The contract supports `set_daily_cap`. |
+| Windows app (`Ownling-Setup.exe`) | Done. The installed app was tested end to end: sign in by phrase, talk, diary. |
+| Android app (`Ownling.apk`) | Built and signed (Android 7 and later). Not yet tested on a phone. |
+| Installing the website from the browser | Done. It has a web app manifest and an offline-capable service worker. |
 
 ## Run it yourself
 
@@ -121,6 +125,15 @@ To run the whole thing on testnet with your own accounts:
 
 `render.yaml` deploys the kitchen and the built app as one free Render web service. That's how the live demo runs.
 
+### Build the Android and Windows apps
+
+Both apps carry their own copy of the game, built with `--mode android` or `--mode windows` (`app/.env.android` and `app/.env.windows`), and call the hosted kitchen at https://ownling.onrender.com.
+
+| Do | See |
+|---|---|
+| `cd app && npm ci && npm run build:android`, then `cd android && ./gradlew assembleRelease` | `app/android/app/build/outputs/apk/release/`. This needs JDK 21 and the Android SDK 36. Add your own signing key to install it on a phone. |
+| `cd app && npm ci && npm run build:windows`, then `cd ../desktop && npm ci && npm run dist` | `desktop/release/Ownling-Setup.exe`. Run this on Windows. |
+
 ## Security and trust
 
 - **Player key.** The app makes a full-access key for the player's own account and keeps it in the browser's local storage. The 12-word phrase restores it. Anyone with access to that browser profile controls the pet. This is acceptable for a testnet game, but not for real money.
@@ -136,7 +149,9 @@ To run the whole thing on testnet with your own accounts:
 |---|---|
 | `contract/` | Rust contract (near-sdk 5.29) |
 | `kitchen/` | Node server: sign-up, sessions, NEAR AI calls, charging. It also serves the built app. |
-| `app/` | The game (React 19, Vite 8) |
+| `app/` | The game (React 19, Vite 8). The same build also installs from the browser. |
+| `app/android/` | Android app (Capacitor 8). It carries its own copy of the game. |
+| `desktop/` | Windows app (Electron). It carries its own copy of the game. |
 | `wake/` | Wake-anywhere page, built as one HTML file |
 | `shared/` | Diary encryption and the pet's system prompt, used by all three |
 | `design/` | Visual design, Mochi renderer, brand assets |
@@ -145,8 +160,8 @@ To run the whole thing on testnet with your own accounts:
 
 - Built for the NEAR Hackathon, Nov 7 to 14, 2026. The first commit is Nov 7. No code predates the hackathon.
 - AI-written code: most of the code was written with Claude Code (Anthropic), directed and reviewed by the author.
-- The visual design and the Mochi character are in `design/`.
-- Main libraries: near-sdk and near-contract-standards 5.29, near-api-js 7.4, @nearai/inference-sdk 0.2.1, React 19, Vite 8, vite-plugin-node-polyfills, vite-plugin-singlefile, Fontsource fonts.
+- AI-made design: the visual design, the Mochi character and the brand assets in `design/` were made by the author with Claude. The files carry Anthropic Content Credentials (C2PA).
+- Main libraries: near-sdk and near-contract-standards 5.29, near-api-js 7.4, @nearai/inference-sdk 0.2.1, React 19, Vite 8, vite-plugin-node-polyfills, vite-plugin-singlefile, Fontsource fonts, Capacitor 8.5 (Android app), Electron 44 and electron-builder 26 (Windows app).
 - This is the author's only NEAR Hackathon entry.
 
 ### Tracks

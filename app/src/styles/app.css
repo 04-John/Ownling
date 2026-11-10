@@ -3,6 +3,11 @@
 
 :root {
   --app-warn-ink: #5C3A06;
+  /* The phone's status and navigation bars, when the app draws under them (the Android app and
+   * the website installed on an iPhone). The Android app sets --safe-area-inset-*; elsewhere the
+   * browser's env() value applies, and in a normal browser tab both are 0. */
+  --sa-top: var(--safe-area-inset-top, env(safe-area-inset-top, 0px));
+  --sa-bottom: var(--safe-area-inset-bottom, env(safe-area-inset-bottom, 0px));
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) { --app-warn-ink: var(--ow-drizzle-ink); }
@@ -148,6 +153,15 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .brand__word { font-size: 22px; font-weight: 900; letter-spacing: -0.03em; }
 .welcome__copy { display: flex; flex-direction: column; gap: 12px; }
 .screen--welcome .footnote { margin-top: 4px; }
+.screen--welcome .text-button { align-self: center; }
+
+/* ---------- Download ---------- */
+.screen--download { gap: 16px; }
+.download-card { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
+.download-card__head { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.download-card__title { margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.download-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.45; color: var(--ow-dusk); }
+.download-steps b { color: var(--ow-ink); }
 
 /* ---------- Adopt ---------- */
 .egg-card {
@@ -349,6 +363,7 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .talk-day { align-self: center; font-size: 12px; font-weight: 700; color: var(--ow-dusk); }
 .talk-empty { margin: auto 24px; text-align: center; font-size: 15px; color: var(--ow-dusk); }
 .talk-reply { align-self: flex-start; max-width: 300px; display: flex; flex-direction: column; gap: 6px; }
+.talk-reply > .proof-tag { align-self: flex-start; }
 .talk-pending { align-self: flex-start; display: flex; align-items: center; gap: 8px; }
 .composer {
   flex: none; display: flex; flex-direction: column; gap: 8px;
@@ -430,6 +445,17 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .mini-body { margin: 0; font-size: 14px; line-height: 1.5; }
 .small-mono { font-size: 13px; }
 .warn { padding: 12px 14px; border-radius: 16px; background: var(--ow-drizzle-wash); color: var(--app-warn-ink); font-size: 14px; line-height: 1.45; }
+
+/* ---------- System bars ----------
+ * Keeps content clear of the phone's status and navigation bars (--sa-*, set at the top). Last in
+ * the file so it wins over each screen's padding; with both insets at 0 nothing changes. */
+.screen { padding-top: max(56px, calc(var(--sa-top) + 24px)); padding-bottom: calc(32px + var(--sa-bottom)); }
+.screen--welcome, .screen--adopt, .screen--form { padding-bottom: calc(36px + var(--sa-bottom)); }
+.screen--proof { padding-bottom: calc(28px + var(--sa-bottom)); }
+.screen--backdrop, .screen--talk { padding: 0; }
+.talk-head { padding-top: max(52px, calc(var(--sa-top) + 20px)); }
+.composer { padding-bottom: calc(30px + var(--sa-bottom)); }
+.sheet { padding-bottom: calc(32px + var(--sa-bottom)); }
 
 @media (prefers-reduced-motion: reduce) {
   .runway__fill { transition: none; }

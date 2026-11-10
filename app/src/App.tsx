@@ -1,5 +1,6 @@
 // Routes and guards. Welcome → Recovery → Adopt → Home. From Home: Feed sheet, Talk, Diary,
 // Ownership (→ Give, → Recovery). When the pet hibernates, Home shows the Hibernating screen.
+// Download (get the app) opens from anywhere, signed in or not.
 import { Component, useEffect, useRef, type ReactNode } from 'react';
 import { useApp } from './state';
 import { navigate, useRoute } from './lib/router';
@@ -16,6 +17,7 @@ import { Talk } from './screens/Talk';
 import { Diary } from './screens/Diary';
 import { Ownership } from './screens/Ownership';
 import { Give } from './screens/Give';
+import { Download } from './screens/Download';
 
 const NEEDS_PET = new Set(['/home', '/feed', '/talk', '/diary', '/ownership', '/give']);
 
@@ -86,7 +88,9 @@ export function App() {
   if (account && petStatus === 'error' && !pet) return <PetLoadError />;
 
   let screen: ReactNode;
-  if (path === '/' || path === '/welcome' || path === '/restore') {
+  if (path === '/download') {
+    screen = <Download />;
+  } else if (path === '/' || path === '/welcome' || path === '/restore') {
     if (account) return <Redirect to={pet ? '/home' : '/adopt'} />;
     screen = path === '/restore' ? <Restore /> : <Welcome />;
   } else if (!account) {

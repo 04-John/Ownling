@@ -7,3 +7,12 @@ dist/
 *.pem
 PLAN.md
 *.local.txt
+dist-android/
+desktop/app/
+desktop/release/
+*.jks
+*.keystore
+keystore.properties
+!app/.env.android
+!app/.env.windows
+release/

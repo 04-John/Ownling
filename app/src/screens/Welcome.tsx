@@ -7,6 +7,7 @@ import { errorText } from '../lib/format';
 import { Mochi } from '../components/Mochi';
 import { LogoMark } from '../components/Icons';
 import { Button, ErrorText } from '../components/ui';
+import { TARGET, runningInstalled } from '../lib/platform';
 
 export function Welcome() {
   const { client, setAccount, setFreshPhrase } = useApp();
@@ -55,6 +56,11 @@ export function Welcome() {
           I already have Mochi
         </a>
         <p className="footnote">No wallet needed. You get a recovery phrase: keep it, and Mochi is yours anywhere.</p>
+        {TARGET === 'web' && !runningInstalled() ? (
+          <a className="text-button" href="#/download">
+            Get the app for Android, Windows or iPhone
+          </a>
+        ) : null}
       </div>
     </main>
   );
