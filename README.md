@@ -1,6 +1,6 @@
 # Ownling
 
-Ownling is a virtual pet whose AI personality, memory and food budget are stored on NEAR, so it keeps working if the Ownling company and its servers go away.
+Ownling is an AI pet that lives on NEAR instead of on our servers. It needs no wallet, pays for its own AI from a NEAR budget, keeps a diary only its owner can read, and keeps running if Ownling shuts down.
 
 People who spend months talking to an AI companion don't own it. The company that runs it holds its memory and can change it, charge more for it or shut it down. Ownling puts the parts that matter on chain and in the owner's hands. The pet is an NFT. It pays for its own AI from a NEAR budget the owner tops up. Its diary is encrypted with a key only the owner can rebuild. Any client can wake it, not just ours.
 
@@ -94,12 +94,12 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Feature | Status |
 |---|---|
 | Contract: adopt, feed, charge with receipt, daily cap, change kitchen, play, diary, hibernation, growth, transfer | Done. 18 unit tests. |
-| Game loop: intro, Mochi greets first, three games with bond on a win, memory you can see ("Mochi will remember"), growth goal and the growing-up moment | Done. Tested in a browser against testnet in practice mode. Not yet run with live NEAR AI. |
+| Game loop: intro, Mochi greets first, three games with bond on a win, memory you can see ("Mochi will remember"), growth goal and the growing-up moment | Done. Tested in a browser against testnet, and the mind on live NEAR AI. |
 | Wallet image by stage | Done |
 | No-wallet sign-up and recovery by phrase | Done. Tested in a browser on the live site. |
 | Encrypted diary | Done. 5 unit tests and a testnet round trip. |
 | Kitchen: owner sessions, cost checks, charging | Done. Tested on testnet in practice mode. |
-| Kitchen and wake page: NEAR AI replies with signature verification | Built. Not yet run against live NEAR AI, because the credits aren't active yet (see Status). |
+| Kitchen and wake page: NEAR AI replies with signature verification | Done. Run on live NEAR AI on Nov 10 (`kitchen/src/dev-mind.ts`): every reply came back signed by sealed hardware (`provider_tee`) and verified. The greeting, memory and all three games followed their rules. |
 | Wake page: sign-in, pet read, diary decryption | Done. Tested in a browser. |
 | Giving a pet away (Give screen) | The contract side is tested. The screen isn't yet tested end to end. |
 | Contract without full-access keys | Not yet. The key is removed before submission; check it with `near account list-keys pets.ownling.testnet network-config testnet now`. |
@@ -116,7 +116,7 @@ You need Node 24 or later. For the contract you also need Rust (pinned in `contr
 |---|---|
 | `cd contract && cargo test` | `18 passed; 0 failed` |
 | `node --test shared/diary.test.ts shared/mind.test.ts` | `pass 11`, `fail 0` (diary encryption, and the mind's modes, parsing and practice games) |
-| `cd app && npm ci && VITE_MOCK=1 npm run dev` | The app on http://localhost:5173 with sample data. No chain and no keys. |
+| `cd app && npm ci && npm run demo` | The whole game on http://localhost:5173 with sample data and practice replies: intro, greeting, games, memory, growth. No chain, no keys. Add `?preset=almost-child#/talk` to the address to see Mochi grow up after one message. |
 | `cd contract && cargo near build non-reproducible-wasm` | `target/near/ownling.wasm` |
 
 To run the whole thing on testnet with your own accounts:
@@ -145,6 +145,13 @@ Both apps carry their own copy of the game, built with `--mode android` or `--mo
 - **Diary.** It's encrypted in the browser with AES-GCM. The key comes from the owner's signature over a fixed message and is never sent anywhere. Only ciphertext and its hash go on chain.
 - **Contract.** It has no admin or upgrade methods. Until its full-access key is deleted (see Feature status), the deployer could still redeploy it.
 - **Public by design.** A pet's name, persona text, stage, budget and charges are public on chain.
+- **What "Verified" proves, and what it doesn't.** The tag means NEAR AI's sealed hardware signed this exact reply, and the signature checked out against its attested key. That proves which model and software answered. It doesn't prove the software has no bugs. On Nov 8, 2026, an attacker used a bug in SGLang, the inference engine running inside NEAR AI's sealed servers, to see requests on one server, including confidential ones (NEAR AI's incident report, Nov 9). Attestation could not have caught that. The rest of Ownling doesn't depend on NEAR AI: the contract enforces the budget, the daily cap and the receipts, and the diary is encrypted with a key only the owner can rebuild.
+
+## Not built yet
+
+- **Food from staking:** a pet that lives on staking rewards, using NEAR's Staking for NEAR AI (launched July 2026).
+- **Battle arena and competitions** between pets, which Illia's original idea lists as things to add on top.
+- **Checking NEAR AI's signature in the contract**, so even a kitchen couldn't charge for a reply it didn't get. Replies are ed25519-signed, which a NEAR contract can check. It also needs a trusted list of NEAR AI's signing keys, and those keys change.
 
 ## Repository
 

@@ -14,7 +14,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { extname, resolve, sep } from 'node:path';
 import { AuthError, sessionAccount, startSession, type SignIn } from './auth.ts';
 import { GAMES, GUESS_THINGS, type GameId, type Mode } from '../../shared/mind.ts';
-import { PRACTICE_MODE, think, type Turn } from './brain.ts';
+import { PRACTICE_MODE, think, warmUp, type Turn } from './brain.ts';
 import { charge, getPet } from './chain.ts';
 import { config } from './config.ts';
 import { costUsd, modelFor, usdToYocto } from './pricing.ts';
@@ -237,4 +237,9 @@ const server = createServer(async (req, res) => {
 server.listen(PORT, () => {
   console.log(`Ownling kitchen ${config.kitchenAccountId} on http://localhost:${PORT} (contract ${config.petsContract})`);
   if (STATIC_DIR) console.log(`Serving the game app from ${STATIC_DIR}`);
+  if (!PRACTICE_MODE) {
+    warmUp()
+      .then((ms) => console.log(`NEAR AI connection ready in ${ms} ms`))
+      .catch((err) => console.error(`NEAR AI warm-up failed: ${(err as Error).message}`));
+  }
 });

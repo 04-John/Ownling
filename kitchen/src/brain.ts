@@ -43,6 +43,21 @@ const client = new InferenceClient({
 });
 
 /**
+ * The first request on a new connection takes NEAR AI 20 s to 2 min (key exchange and attestation);
+ * later ones take a few seconds. One tiny request at startup pays that cost before any player does.
+ */
+export async function warmUp(): Promise<number> {
+  const started = Date.now();
+  await client.chat.completions.create({
+    model: config.defaultModel,
+    max_tokens: 1,
+    reasoning_effort: 'low',
+    messages: [{ role: 'user', content: 'Hi' }],
+  });
+  return Date.now() - started;
+}
+
+/**
  * One thought. `message` is null when Mochi speaks first: a greeting, or the start of a game round.
  * The reply's REMEMBER and RESULT lines are split off (parseThought) after the signature check,
  * which covers the full text the model signed.
