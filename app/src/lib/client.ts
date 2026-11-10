@@ -2,7 +2,7 @@
 // methods and never talk to NEAR or the kitchen directly. Every method that moves money or
 // changes the pet resolves only after the transaction is final, and throws an Error whose
 // message is safe to show (sentence case, no apology).
-import type { Account, AppConfig, ChatTurn, DiaryView, PetState, Proof } from './types';
+import type { Account, ActiveGame, AppConfig, ChatTurn, DiaryView, GameId, PetState, TalkResult } from './types';
 
 export interface OwnlingClient {
   readonly config: AppConfig;
@@ -24,8 +24,13 @@ export interface OwnlingClient {
   feed(amountNear: number): Promise<PetState>;
   play(): Promise<PetState>;
 
-  /** Send a message; resolves with Mochi's reply, its proof and the pet after the charge. */
-  talk(message: string): Promise<{ reply: ChatTurn; proof: Proof; pet: PetState }>;
+  /** Send a message, inside a game round when `game` is set; resolves with Mochi's reply, its
+   * proof, anything it learned and the pet after the charge. */
+  talk(message: string, game?: ActiveGame | null): Promise<TalkResult>;
+  /** Mochi speaks first, about something it remembers. */
+  greet(): Promise<TalkResult>;
+  /** Open a game round: Mochi asks the riddle or the question. */
+  startGame(id: GameId): Promise<TalkResult & { game: ActiveGame }>;
   /** This session's conversation, oldest first. */
   history(): ChatTurn[];
 

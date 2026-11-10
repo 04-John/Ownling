@@ -2,8 +2,10 @@
 //   GET  /health
 //   POST /signup   {publicKey} -> {accountId}   (a new player's named testnet account)
 //   POST /session  {accountId, publicKey, signature, nonce, issuedAt} -> {token, expiresAt}
-//   POST /talk     Authorization: Bearer <token>; {tokenId, message, history?, memory?}
-//                  -> {reply, model, usage, charged, budget, proof}
+//   POST /talk     Authorization: Bearer <token>; {tokenId, message, history?, memory?, kind?, game?, thing?}
+//                  kind: talk (default), greet (Mochi speaks first) or game (a round of riddle, guess
+//                  or rather; no message opens the round)
+//                  -> {reply, remember, result, model, usage, charged, budget, proof}
 //   GET  anything else -> the built game app from STATIC_DIR, when set (one address for app and kitchen);
 //        /download opens its Get the app screen
 // The kitchen never logs what owners or pets say.
@@ -11,6 +13,7 @@ import { readFile } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { extname, resolve, sep } from 'node:path';
 import { AuthError, sessionAccount, startSession, type SignIn } from './auth.ts';
+import { GAMES, GUESS_THINGS, type GameId, type Mode } from '../../shared/mind.ts';
 import { PRACTICE_MODE, think, type Turn } from './brain.ts';
 import { charge, getPet } from './chain.ts';
 import { config } from './config.ts';
@@ -55,7 +58,7 @@ const thinking = new Set<string>();
 
 async function talk(req: IncomingMessage, body: unknown) {
   const accountId = sessionAccount(bearer(req));
-  const { tokenId, message, history, memory } = parseTalk(body);
+  const { tokenId, message, history, memory, mode } = parseTalk(body);
 
   const pet = await getPet(tokenId);
   if (!pet) throw new HttpError(404, 'No such pet');
@@ -74,12 +77,14 @@ async function talk(req: IncomingMessage, body: unknown) {
   if (thinking.has(tokenId)) throw new HttpError(409, `${pet.name} is still thinking`);
   thinking.add(tokenId);
   try {
-    const thought = await think(pet, history, message, memory);
+    const thought = await think(pet, history, message, memory, mode);
     const amount = thought.proof ? usdToYocto(await costUsd(thought.model, thought.usage)) : PRACTICE_CHARGE;
     const budget = await charge(tokenId, amount, thought.receipt);
-    console.log(`talk pet=${tokenId} model=${thought.model} tokens=${thought.usage.prompt_tokens}+${thought.usage.completion_tokens} charged=${amount}`);
+    console.log(`${mode.kind} pet=${tokenId} model=${thought.model} tokens=${thought.usage.prompt_tokens}+${thought.usage.completion_tokens} charged=${amount}`);
     return {
       reply: thought.reply,
+      remember: thought.remember,
+      result: thought.result,
       model: thought.model,
       usage: thought.usage,
       charged: amount.toString(),
@@ -92,7 +97,7 @@ async function talk(req: IncomingMessage, body: unknown) {
   }
 }
 
-function parseTalk(body: unknown): { tokenId: string; message: string; history: Turn[]; memory?: string } {
+function parseTalk(body: unknown): { tokenId: string; message: string | null; history: Turn[]; memory?: string; mode: Mode } {
   const b = (body ?? {}) as Record<string, unknown>;
   const text = (v: unknown, max: number, name: string) => {
     if (typeof v !== 'string' || v.trim() === '' || v.length > max) {
@@ -100,10 +105,14 @@ function parseTalk(body: unknown): { tokenId: string; message: string; history: 
     }
     return v;
   };
+  const mode = parseMode(b);
+  // Mochi speaks first when greeting or opening a game round; otherwise the owner said something.
+  const speaksFirst = mode.kind === 'greet' || (mode.kind === 'game' && b.message == null);
   const history = Array.isArray(b.history) ? b.history.slice(-MAX_TURNS) : [];
   return {
+    mode,
     tokenId: text(b.tokenId, 32, 'tokenId'),
-    message: text(b.message, MAX_MESSAGE, 'message'),
+    message: speaksFirst ? null : text(b.message, MAX_MESSAGE, 'message'),
     history: history.map((t) => {
       const turn = (t ?? {}) as Record<string, unknown>;
       if (turn.role !== 'user' && turn.role !== 'assistant') throw new HttpError(400, 'history roles must be user or assistant');
@@ -111,6 +120,19 @@ function parseTalk(body: unknown): { tokenId: string; message: string; history: 
     }),
     memory: b.memory === undefined ? undefined : text(b.memory, MAX_MEMORY, 'memory'),
   };
+}
+
+/** `kind` is talk (default), greet or game. A game's secret thing must come from GUESS_THINGS, so no
+ * client text ever reaches the system prompt. */
+function parseMode(b: Record<string, unknown>): Mode {
+  if (b.kind === undefined || b.kind === 'talk') return { kind: 'talk' };
+  if (b.kind === 'greet') return { kind: 'greet' };
+  if (b.kind !== 'game') throw new HttpError(400, 'kind must be talk, greet or game');
+  if (typeof b.game !== 'string' || !(b.game in GAMES)) throw new HttpError(400, `game must be one of ${Object.keys(GAMES).join(', ')}`);
+  const game = b.game as GameId;
+  if (game !== 'guess') return { kind: 'game', game };
+  if (typeof b.thing !== 'string' || !GUESS_THINGS.includes(b.thing)) throw new HttpError(400, 'thing must be one of the guessing game things');
+  return { kind: 'game', game, thing: b.thing };
 }
 
 /** The caller's address, behind a hosting proxy when there is one. */

@@ -1,41 +1,19 @@
-// Feed / Play / Talk. Only Talk is filled. During the play cooldown, Play reads "Rest 9:58".
+// Feed / Play / Talk. Only Talk is filled. Play opens the games sheet.
 import { IconChat, IconDrop, IconSparkle } from './Icons';
-import { fmtCountdown } from '../lib/format';
 
-type Props = {
-  feedHref: string;
-  talkHref: string;
-  onPlay: () => void;
-  playBusy: boolean;
-  /** Milliseconds of cooldown left, or null when Play is available. */
-  restLeftMs: number | null;
-};
+type Props = { feedHref: string; playHref: string; talkHref: string };
 
-export function ActionTiles({ feedHref, talkHref, onPlay, playBusy, restLeftMs }: Props) {
-  const resting = restLeftMs != null && restLeftMs > 0;
+export function ActionTiles({ feedHref, playHref, talkHref }: Props) {
   return (
     <nav className="tiles" aria-label="Actions">
       <a className="tile" href={feedHref}>
         <IconDrop className="tile__icon" />
         Feed
       </a>
-      <button
-        type="button"
-        className={resting ? 'tile tile--resting' : 'tile'}
-        onClick={() => !resting && !playBusy && onPlay()}
-        aria-disabled={resting || playBusy}
-        aria-busy={playBusy}
-      >
+      <a className="tile" href={playHref}>
         <IconSparkle className="tile__icon" />
-        {resting ? (
-          <>
-            <span aria-hidden="true">Rest {fmtCountdown(restLeftMs)}</span>
-            <span className="sr-only">Play. Resting for {Math.ceil(restLeftMs / 60000)} more minutes</span>
-          </>
-        ) : (
-          'Play'
-        )}
-      </button>
+        Play
+      </a>
       <a className="tile tile--primary" href={talkHref}>
         <IconChat className="tile__icon" />
         Talk

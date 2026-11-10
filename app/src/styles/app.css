@@ -163,6 +163,44 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .download-steps { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 6px; font-size: 15px; line-height: 1.45; color: var(--ow-dusk); }
 .download-steps b { color: var(--ow-ink); }
 
+/* ---------- Intro (Welcome steps) ---------- */
+.display--intro { font-size: 30px; line-height: 1.12; }
+.intro-dots { display: flex; gap: 8px; padding-top: 4px; }
+.intro-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ow-line); transition: width 0.25s ease; }
+.intro-dot--on { width: 22px; border-radius: var(--ow-radius-pill); background: var(--ow-rain); }
+
+/* ---------- Growth (Home header) ---------- */
+.growth { display: flex; align-items: center; gap: 10px; margin-top: -4px; font-size: 13px; font-weight: 700; line-height: 1.35; color: var(--ow-dusk); }
+.growth__track { width: 48px; height: 6px; flex: none; border-radius: var(--ow-radius-pill); background: var(--ow-puddle); overflow: hidden; }
+.growth__fill { display: block; height: 100%; border-radius: var(--ow-radius-pill); background: var(--ow-proof); transition: width 0.8s ease; }
+.bubble-link { align-self: flex-start; color: inherit; text-decoration: none; }
+
+/* ---------- Play (games sheet) ---------- */
+.games { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.game-card {
+  width: 100%; padding: 14px 16px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; text-align: left;
+  border: 1px solid var(--ow-line); border-radius: 18px; background: var(--ow-paper); color: var(--ow-ink);
+  font-family: var(--ow-font); cursor: pointer;
+}
+.game-card:hover { border-color: var(--ow-rain); }
+.game-card__title { font-size: 16px; font-weight: 800; }
+.game-card__blurb { font-size: 14px; line-height: 1.4; color: var(--ow-dusk); }
+
+/* ---------- Talk: games, memory, growth ---------- */
+.game-bar {
+  flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 0 16px; border-bottom: 1px solid var(--ow-line); background: var(--ow-paper);
+}
+.game-bar__title { font-size: 14px; font-weight: 800; }
+.learned { margin: 0; padding-left: 4px; font-size: 12px; font-weight: 700; color: var(--ow-proof); }
+.talk-notice { align-self: center; margin: 0; max-width: 300px; text-align: center; font-size: 13px; font-weight: 700; color: var(--ow-proof); }
+.round-end {
+  align-self: stretch; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px;
+  border: 1px solid var(--ow-line); border-radius: 18px; background: var(--ow-paper);
+}
+.round-end__title { margin: 0; font-size: 16px; font-weight: 800; }
+.round-end .btn { height: 44px; font-size: 15px; }
+
 /* ---------- Adopt ---------- */
 .egg-card {
   height: 230px; flex: none;

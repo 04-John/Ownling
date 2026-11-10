@@ -15,8 +15,9 @@ import {
   sealDiary,
   type DiaryEntry,
 } from '../../../shared/diary';
+import { GUESS_THINGS, type Mode } from '../../../shared/mind';
 import type { OwnlingClient } from './client';
-import type { Account as Player, AppConfig, ChatTurn, DiaryView, PetState, Proof } from './types';
+import type { Account as Player, ActiveGame, AppConfig, ChatTurn, DiaryView, PetState, Proof, TalkResult } from './types';
 
 const env = import.meta.env;
 const RPC_URL: string = env.VITE_RPC_URL ?? 'https://test.rpc.fastnear.com';
@@ -37,6 +38,7 @@ type PetView = {
 type Saved = { accountId: string; secretKey: string; phrase: string };
 type TalkResponse = {
   reply: string; model: string; charged: string; verified: boolean;
+  remember?: string[]; result?: 'win' | 'lose' | null;
   proof: { kind: 'provider_tee' | 'gateway'; hash: string; signer: { signingAddress: string } } | null;
 };
 
@@ -157,16 +159,50 @@ export function createNearClient(): OwnlingClient {
     }
   }
 
-  async function rememberExchange(said: string, replied: string): Promise<void> {
+  /** Save an exchange, and any facts Mochi learned, to the diary. `said` is null when Mochi spoke first. */
+  async function rememberExchange(said: string | null, replied: string, facts: string[]): Promise<void> {
     if (!tokenId) return;
     await unlock();
     if (!diaryKey) return;
-    diaryEntry = remember(diaryEntry ?? emptyDiary(), [
-      { role: 'user', content: said },
-      { role: 'assistant', content: replied },
-    ]);
+    diaryEntry = remember(
+      diaryEntry ?? emptyDiary(),
+      [...(said ? [{ role: 'user' as const, content: said }] : []), { role: 'assistant', content: replied }],
+      facts,
+    );
     const sealed = await sealDiary(diaryKey, diaryEntry);
     await call('save_diary', { token_id: tokenId, ciphertext: sealed.ciphertext, hash: sealed.hash });
+  }
+
+  /** One thought through the kitchen. `message` is null when Mochi speaks first (greet, game start). */
+  async function think(message: string | null, mode: Mode): Promise<TalkResult> {
+    const pet = await currentPet();
+    if (pet.hibernating) throw new Error(`${pet.name} is hibernating. Feed it to wake it up.`);
+    const token = await sessionToken();
+    await unlock().catch(() => {});
+    const history = turns.slice(-12).map(({ role, content }) => ({ role, content }));
+    const said: ChatTurn | null = message ? { role: 'user', content: message, at: Date.now() } : null;
+    if (said) turns.push(said);
+    let res: TalkResponse;
+    try {
+      res = await kitchen<TalkResponse>('/talk', {
+        tokenId: pet.tokenId, message: message ?? undefined, history, ...mode,
+        memory: diaryEntry ? memoryText(diaryEntry) : undefined,
+      }, 'POST', token);
+    } catch (err) {
+      turns = turns.filter((t) => t !== said);
+      throw err;
+    }
+    const proof: Proof = res.verified && res.proof
+      ? { status: 'verified', model: res.model, costNear: toNear(res.charged), receiptHash: res.proof.hash, signer: res.proof.signer.signingAddress, signatureKind: res.proof.kind }
+      : { status: 'none', model: res.model, costNear: toNear(res.charged) };
+    const learned = (res.remember ?? []).filter((f) => !diaryEntry?.facts.includes(f));
+    const reply: ChatTurn = {
+      role: 'assistant', content: res.reply, at: Date.now(), proof,
+      ...(learned.length ? { learned } : {}), ...(res.result ? { result: res.result } : {}),
+    };
+    turns.push(reply);
+    rememberExchange(message, res.reply, learned).catch(() => {});
+    return { reply, proof, pet: await currentPet(), learned, result: res.result ?? null };
   }
 
   async function kitchen<T>(path: string, body: unknown, method = 'POST', bearer?: string): Promise<T> {
@@ -247,30 +283,15 @@ export function createNearClient(): OwnlingClient {
       return toPet(await call<PetView>('play', { token_id: pet.tokenId }));
     },
 
-    async talk(message) {
-      const pet = await currentPet();
-      if (pet.hibernating) throw new Error(`${pet.name} is hibernating. Feed it to wake it up.`);
-      const token = await sessionToken();
-      await unlock().catch(() => {});
-      const history = turns.slice(-12).map(({ role, content }) => ({ role, content }));
-      const said: ChatTurn = { role: 'user', content: message, at: Date.now() };
-      turns.push(said);
-      let res: TalkResponse;
-      try {
-        res = await kitchen<TalkResponse>('/talk', {
-          tokenId: pet.tokenId, message, history, memory: diaryEntry ? memoryText(diaryEntry) : undefined,
-        }, 'POST', token);
-      } catch (err) {
-        turns = turns.filter((t) => t !== said);
-        throw err;
-      }
-      const proof: Proof = res.verified && res.proof
-        ? { status: 'verified', model: res.model, costNear: toNear(res.charged), receiptHash: res.proof.hash, signer: res.proof.signer.signingAddress, signatureKind: res.proof.kind }
-        : { status: 'none', model: res.model, costNear: toNear(res.charged) };
-      const reply: ChatTurn = { role: 'assistant', content: res.reply, at: Date.now(), proof };
-      turns.push(reply);
-      rememberExchange(message, res.reply).catch(() => {});
-      return { reply, proof, pet: await currentPet() };
+    talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),
+
+    greet: () => think(null, { kind: 'greet' }),
+
+    async startGame(id) {
+      const game: ActiveGame = id === 'guess'
+        ? { id, thing: GUESS_THINGS[Math.floor(Math.random() * GUESS_THINGS.length)] }
+        : { id };
+      return { ...(await think(null, { kind: 'game', game: id, thing: game.thing })), game };
     },
 
     history: () => [...turns],

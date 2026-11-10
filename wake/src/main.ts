@@ -13,7 +13,7 @@ import { signMessage } from 'near-api-js/nep413';
 import { parseSeedPhrase } from 'near-api-js/seed-phrase';
 import { MOCHI_CSS, moodFor, renderMochi, stageFor, type Moment } from '../../design/mochi/mochi';
 import { deriveDiaryKey, diaryKeyMessage, emptyDiary, memoryText, openDiary, remember, sealDiary, type DiaryEntry } from '../../shared/diary';
-import { DEFAULT_MODEL, MAX_HISTORY, MAX_REPLY_TOKENS, systemPrompt, type MindPet } from '../../shared/mind';
+import { DEFAULT_MODEL, MAX_HISTORY, MAX_REPLY_TOKENS, parseThought, systemPrompt, type MindPet } from '../../shared/mind';
 
 const params = new URLSearchParams(location.search);
 const CONTRACT = params.get('contract') ?? 'pets.ownling.testnet';
@@ -165,7 +165,7 @@ async function send() {
         { role: 'user', content: message },
       ],
     });
-    const reply = completion.choices[0]?.message.content?.trim() ?? '';
+    const { reply, remember: learned } = parseThought(completion.choices[0]?.message.content?.trim() ?? '');
     pending.remove();
     bubble('assistant', reply);
     turns.push({ role: 'user', content: message }, { role: 'assistant', content: reply });
@@ -178,7 +178,7 @@ async function send() {
       drawPet(stage, moodOf(pet), 'talking');
     }
     setTimeout(() => pet && drawPet(stage, moodOf(pet), 'none'), 2000);
-    keepInDiary(message, reply).catch(() => {});
+    keepInDiary(message, reply, learned).catch(() => {});
   } catch (err) {
     pending.remove();
     drawPet(stage, moodOf(pet), 'none');
@@ -189,9 +189,9 @@ async function send() {
 }
 
 /** Mochi keeps remembering here too: the owner's own key writes the diary, no kitchen needed. */
-async function keepInDiary(said: string, replied: string) {
+async function keepInDiary(said: string, replied: string, facts: string[]) {
   if (!owner || !pet || !diaryKey) return;
-  diary = remember(diary, [{ role: 'user', content: said }, { role: 'assistant', content: replied }]);
+  diary = remember(diary, [{ role: 'user', content: said }, { role: 'assistant', content: replied }], facts);
   const sealed = await sealDiary(diaryKey, diary);
   await owner.callFunction({
     contractId: CONTRACT,

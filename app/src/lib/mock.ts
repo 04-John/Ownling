@@ -1,22 +1,18 @@
 // A stand-in OwnlingClient with sample data and short delays, so screens can be built and
 // reviewed without the chain or the kitchen. Enabled with VITE_MOCK=1.
 import { moodFor, runwayDays, stageFor } from '../../../design/mochi/mochi';
+import { GUESS_THINGS, parseThought, type Mode } from '../../../shared/mind';
+import { practiceReply } from '../../../shared/practice';
 import type { OwnlingClient } from './client';
-import type { Account, ChatTurn, DiaryView, PetState, Proof } from './types';
+import type { Account, ActiveGame, ChatTurn, DiaryView, PetState, Proof, TalkResult } from './types';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const PLAY_COOLDOWN_MS = 10 * 60 * 1000;
 const PHRASE = 'river cloud gentle orbit maple quiet lantern drift echo velvet harbor bloom';
-const REPLIES = [
-  '*floats closer* Hello. I was watching the rain.',
-  'Ooh, tell me more. *wiggles happily*',
-  'I like it when you visit. It feels like rain on a warm day.',
-  '*yawns softly* I remember you. You are kind.',
-];
 
 /** Dev-only starting states for reviewing screens by URL: ?preset=<name>#/route (mock mode only). */
 export const MOCK_PRESETS = [
-  'account', 'home-egg', 'home-baby', 'home-child', 'home-teen', 'home-adult',
+  'account', 'home-egg', 'home-baby', 'almost-child', 'home-child', 'home-teen', 'home-adult',
   'peckish', 'hungry', 'hibernating', 'resting', 'chat', 'chat-practice', 'diary', 'diary-locked', 'wallet',
 ] as const;
 
@@ -30,6 +26,27 @@ export function createMockClient(preset?: string | null): OwnlingClient {
   let practiceMode = true;
   let facts = ['Owner loves rainy evenings'];
   let diarySizeBytes = 360;
+
+  /** The practice mind's reply (shared/practice.ts), charged like the practice kitchen does. */
+  async function think(message: string | null, mode: Mode): Promise<TalkResult> {
+    const p = need();
+    if (p.hibernating) throw new Error(`${p.name} is hibernating. Feed it to wake it up.`);
+    const history = turns.slice(-12).map(({ role, content }) => ({ role, content }));
+    if (message) turns.push({ role: 'user', content: message, at: Date.now() });
+    await wait(1600);
+    const thought = parseThought(practiceReply(p, history, message, mode));
+    const learned = thought.remember.filter((f) => !facts.includes(f));
+    facts = [...facts, ...learned];
+    const cost = 0.000001;
+    const proof: Proof = { status: 'none', model: 'practice', costNear: cost };
+    const reply: ChatTurn = {
+      role: 'assistant', content: thought.reply, at: Date.now(), proof,
+      ...(learned.length ? { learned } : {}), ...(thought.result ? { result: thought.result } : {}),
+    };
+    turns.push(reply);
+    pet = refresh({ ...p, messages: p.messages + 1, foodNear: p.foodNear - cost, spentTodayNear: p.spentTodayNear + cost, hasDiary: true });
+    return { reply, proof, pet, learned, result: thought.result };
+  }
 
   const refresh = (p: PetState): PetState => {
     const growthPoints = p.messages + p.bond;
@@ -75,6 +92,7 @@ export function createMockClient(preset?: string | null): OwnlingClient {
       case 'account': break;
       case 'home-egg': pet = seedPet(0, 0, 0.4894); break;
       case 'home-baby': pet = seedPet(6, 2); break;
+      case 'almost-child': pet = seedPet(17, 2); break;
       case 'home-teen': pet = seedPet(110, 10); break;
       case 'home-adult': pet = seedPet(210, 24); break;
       case 'peckish': pet = seedPet(30, 4, 0.1); break;
@@ -154,17 +172,11 @@ export function createMockClient(preset?: string | null): OwnlingClient {
       lastPlayed = Date.now();
       return (pet = refresh({ ...p, bond: p.bond + 1 }));
     },
-    async talk(message) {
-      const p = need();
-      if (p.hibernating) throw new Error(`${p.name} is hibernating. Feed it to wake it up.`);
-      turns.push({ role: 'user', content: message, at: Date.now() });
-      await wait(1600);
-      const cost = 0.000001;
-      const proof: Proof = { status: 'none', model: 'practice', costNear: cost };
-      const reply: ChatTurn = { role: 'assistant', content: REPLIES[p.messages % REPLIES.length], at: Date.now(), proof };
-      turns.push(reply);
-      pet = refresh({ ...p, messages: p.messages + 1, foodNear: p.foodNear - cost, spentTodayNear: p.spentTodayNear + cost, hasDiary: true });
-      return { reply, proof, pet };
+    talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),
+    greet: () => think(null, { kind: 'greet' }),
+    async startGame(id) {
+      const game: ActiveGame = id === 'guess' ? { id, thing: GUESS_THINGS[Math.floor(Math.random() * GUESS_THINGS.length)] } : { id };
+      return { ...(await think(null, { kind: 'game', game: id, thing: game.thing })), game };
     },
     history: () => [...turns],
     async diary(): Promise<DiaryView> {

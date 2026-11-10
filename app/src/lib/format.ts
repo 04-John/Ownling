@@ -1,5 +1,6 @@
 // Formatting helpers shared by every screen. Copy rules: sentence case, "—" for unknown values
 // (never 0), NEAR amounts always rendered in mono by the caller.
+import { stageFor } from '../../../design/mochi/mochi';
 import type { Mood, Stage } from './types';
 
 export const DASH = '—';
@@ -68,11 +69,23 @@ export function nextStage(growth: number): { stage: Stage; at: number } | null {
   return null;
 }
 
-/** "Growth 34 · teen at 75" */
-export function growthLine(growth: number): string {
+const STAGE_START: Record<Stage, number> = { egg: 0, baby: 1, child: 20, teen: 75, adult: 200 };
+
+/** How far the pet is toward its next stage: "18 more chats or games until Mochi is a child". */
+export function growthProgress(growth: number, name: string): { text: string; progress: number } {
   const next = nextStage(growth);
-  return next ? `Growth ${growth} · ${next.stage} at ${next.at}` : `Growth ${growth} · fully grown`;
+  if (!next) return { text: `${name} is fully grown`, progress: 1 };
+  const left = next.at - growth;
+  const from = STAGE_START[stageFor(growth)];
+  const steps = left === 1 ? 'chat or game' : 'chats or games';
+  return {
+    text: next.stage === 'baby' ? `Say hello and ${name} hatches` : `${left} more ${steps} until ${name} is a ${next.stage}`,
+    progress: Math.min(1, Math.max(0, (growth - from) / (next.at - from))),
+  };
 }
+
+const STAGE_ORDER: Stage[] = ['egg', 'baby', 'child', 'teen', 'adult'];
+export const stageRank = (s: Stage) => STAGE_ORDER.indexOf(s);
 
 const MODEL_NAMES: Record<string, string> = {
   'z-ai/glm-5.3-flash': 'GLM-5.3 Flash · NEAR AI',

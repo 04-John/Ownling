@@ -81,7 +81,10 @@ export function Diary() {
           view.facts.length || view.recent.length ? (
             <>
               {view.facts.length ? (
-                <ul className="entries" aria-label={`What ${pet.name} remembers`}>
+                <h2 className="section-label">Things {pet.name} knows about you</h2>
+              ) : null}
+              {view.facts.length ? (
+                <ul className="entries" aria-label={`Things ${pet.name} knows about you`}>
                   {view.facts.map((f, i) => (
                     <li key={i} className="entry">
                       <span className="entry__text">{f}</span>

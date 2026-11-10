@@ -1,11 +1,12 @@
 // App-wide state: the client, the signed-in account and its pet. Screens read it with useApp().
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { OwnlingClient } from './lib/client';
-import type { Account, PetState } from './lib/types';
-import { errorText } from './lib/format';
+import type { Account, PetState, Stage } from './lib/types';
+import { errorText, stageRank } from './lib/format';
 
-/** A moment Home should play when it next shows (set by Feed and Wake up before navigating). */
-export type Celebration = { kind: 'eat'; fromDays: number | null } | { kind: 'wake' };
+/** A moment Home should play when it next shows (set by Feed and Wake up before navigating, and
+ * by setPet when the pet reaches a new stage). */
+export type Celebration = { kind: 'eat'; fromDays: number | null } | { kind: 'wake' } | { kind: 'grow'; stage: Stage };
 
 type PetStatus = 'idle' | 'loading' | 'ready' | 'error';
 
@@ -37,7 +38,13 @@ export function AppProvider({ client, children }: { client: OwnlingClient; child
   const [celebration, setCelebration] = useState<Celebration | null>(null);
   const loadSeq = useRef(0);
 
+  const lastPet = useRef<PetState | null>(null);
   const setPet = useCallback((p: PetState | null) => {
+    const before = lastPet.current;
+    if (p && before && p.tokenId === before.tokenId && stageRank(p.stage) > stageRank(before.stage)) {
+      setCelebration({ kind: 'grow', stage: p.stage });
+    }
+    lastPet.current = p;
     setPetState(p);
     setPetStatus('ready');
     setPetError(null);

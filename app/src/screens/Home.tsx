@@ -1,11 +1,12 @@
-// 03 Home (or 06 Hibernating when the pet sleeps). Mochi 270 px, last line in a bubble, runway
-// meter, Feed / Play / Talk. Plays eating, playing, resting and waking moments.
+// 03 Home (or 06 Hibernating when the pet sleeps). Mochi 270 px, its greeting or last line in a
+// bubble (tap to reply), progress to the next stage, runway meter, Feed / Play / Talk. Plays
+// thinking, talking, eating, growing and waking moments.
 import { useEffect, useMemo, useState } from 'react';
 import { useApp, usePet } from '../state';
-import { errorText, fmtNear, growthLine } from '../lib/format';
-import { prefersReducedMotion, useMomentSequence, useNow } from '../lib/hooks';
+import { errorText, fmtNear, growthProgress } from '../lib/format';
+import { prefersReducedMotion, useMomentSequence } from '../lib/hooks';
 import type { Moment } from '../components/Mochi';
-import type { PetState } from '../lib/types';
+import type { PetState, Stage } from '../lib/types';
 import { Mochi } from '../components/Mochi';
 import { Bubble } from '../components/Bubble';
 import { MoodLine } from '../components/MoodLine';
@@ -20,13 +21,17 @@ export function HomeRoute() {
   return pet.hibernating ? <Hibernating /> : <Home />;
 }
 
+/** Greet once per app start, so Mochi speaks first when you open it, not each time you come back. */
+let greetedThisSession = false;
+
 /** Mochi's own voice: at most two short sentences, small actions in asterisks. */
-function lineFor(pet: PetState, moment: Moment, lastReply: string | null): string {
+function lineFor(pet: PetState, moment: Moment, lastReply: string | null, grewTo: Stage | null): string {
   if (moment === 'eating') return '*gulps the rain* Mmm. Thank you.';
   if (moment === 'waking') return '*blinks awake* Oh. You came back for me.';
-  if (moment === 'playing') return '*bounces around* Again, again.';
+  if (grewTo === 'baby') return '*hatches* Oh. Hello. Are you my person?';
+  if (grewTo) return `*glows* I grew. I'm a ${grewTo} now.`;
+  if (moment === 'thinking') return '*stirs*';
   if (pet.stage === 'egg') return '*wobbles gently*';
-  if (moment === 'resting') return '*catches its breath* That was fun.';
   if (lastReply) return lastReply;
   if (pet.mood === 'hungry') return '*droops a little* I could really use some rain.';
   if (pet.mood === 'peckish') return '*sniffs the air* Is that rain I smell?';
@@ -36,51 +41,56 @@ function lineFor(pet: PetState, moment: Moment, lastReply: string | null): strin
 export function Home() {
   const { client, setPet, reloadPet, celebration, setCelebration } = useApp();
   const pet = usePet();
-  const { step, run, cancel } = useMomentSequence();
-  const [playBusy, setPlayBusy] = useState(false);
+  const { step, run } = useMomentSequence();
   const [error, setError] = useState<string | null>(null);
   const [fromDays, setFromDays] = useState<number | null | undefined>(undefined);
+  const [greeting, setGreeting] = useState<'waiting' | string | null>(null);
+  const [grewTo, setGrewTo] = useState<Stage | null>(null);
 
   // Refresh on open: the kitchen may have charged Mochi since we last looked.
   useEffect(() => {
     reloadPet({ silent: true }).catch((e) => setError(`${pet.name}'s latest state didn't load: ${errorText(e)}`));
   }, [reloadPet]);
 
-  // Play the moment Feed or Wake up asked for.
+  // Mochi speaks first, about something it remembers. An egg hatches with its first words.
+  useEffect(() => {
+    if (greetedThisSession || pet.hibernating) return;
+    greetedThisSession = true;
+    setGreeting('waiting');
+    client
+      .greet()
+      .then(({ reply, pet: next }) => {
+        setGreeting(reply.content);
+        setPet(next);
+        run([{ moment: 'talking', ms: 2200 }]);
+      })
+      .catch(() => setGreeting(null));
+  }, [client, pet.hibernating, run, setPet]);
+
+  // Play the moment Feed, Wake up or growing up asked for.
   useEffect(() => {
     if (!celebration) return;
     if (celebration.kind === 'eat') {
       setFromDays(celebration.fromDays);
       run(prefersReducedMotion() ? [{ moment: 'eating', ms: 1500 }] : [{ moment: 'none', ms: 900, drops: true }, { moment: 'eating', ms: 1500 }]);
+    } else if (celebration.kind === 'grow') {
+      setGrewTo(celebration.stage);
+      run([{ moment: 'playing', ms: 2500 }]);
     } else {
       run([{ moment: 'waking', ms: 3000 }]);
     }
     setCelebration(null);
   }, [celebration, run, setCelebration]);
 
-  const now = useNow(pet.playReadyAt ? 1000 : null);
-  const restLeftMs = pet.playReadyAt && pet.playReadyAt > now ? pet.playReadyAt - now : null;
-  const moment: Moment = step?.moment ?? (restLeftMs ? 'resting' : 'none');
+  const moment: Moment = step?.moment ?? (greeting === 'waiting' ? 'thinking' : 'none');
 
   const lastReply = useMemo(() => {
+    if (greeting && greeting !== 'waiting') return greeting;
     const turns = client.history();
     for (let i = turns.length - 1; i >= 0; i--) if (turns[i].role === 'assistant') return turns[i].content;
     return null;
-  }, [client]);
-
-  async function play() {
-    setPlayBusy(true);
-    setError(null);
-    run([{ moment: 'playing', ms: 2000 }]);
-    try {
-      setPet(await client.play());
-    } catch (e) {
-      cancel();
-      setError(errorText(e));
-    } finally {
-      setPlayBusy(false);
-    }
-  }
+  }, [client, greeting]);
+  const growth = growthProgress(pet.growthPoints, pet.name);
 
   return (
     <main className="screen screen--home">
@@ -101,9 +111,16 @@ export function Home() {
         </div>
       </header>
 
-      <div aria-live="polite">
-        <Bubble from="mochi" text={lineFor(pet, moment, lastReply)} speaker={pet.name} className="bubble--home" />
+      <div className="growth">
+        <span className="growth__track" aria-hidden="true">
+          <span className="growth__fill" style={{ width: `${Math.round(growth.progress * 100)}%` }} />
+        </span>
+        <span className="growth__text">{growth.text}</span>
       </div>
+
+      <a className="bubble-link" href="#/talk" aria-live="polite" aria-label={`${pet.name} says: ${lineFor(pet, moment, lastReply, grewTo)}. Reply`}>
+        <Bubble from="mochi" text={lineFor(pet, moment, lastReply, grewTo)} speaker={pet.name} className="bubble--home" />
+      </a>
 
       <div className="stage stage--home">
         {step?.drops ? (
@@ -120,14 +137,14 @@ export function Home() {
 
       <RunwayMeter name={pet.name} days={pet.runwayDays} mood={pet.mood} fromDays={fromDays}>
         <div className="runway__meta">
-          <span>{growthLine(pet.growthPoints)}</span>
+          <span>Food</span>
           <span className="mono">{fmtNear(pet.foodNear)} testnet NEAR</span>
         </div>
-        <p className="runway__note">Counted at the full daily cap. Light chatting lasts longer.</p>
+        <p className="runway__note">Each reply uses a little food. Counted at the full daily cap.</p>
       </RunwayMeter>
 
       <ErrorText>{error}</ErrorText>
-      <ActionTiles feedHref="#/feed" talkHref="#/talk" onPlay={play} playBusy={playBusy} restLeftMs={restLeftMs} />
+      <ActionTiles feedHref="#/feed" playHref="#/play" talkHref="#/talk" />
     </main>
   );
 }

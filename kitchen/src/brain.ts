@@ -2,7 +2,8 @@
 // signature verified against the attested model before anyone sees it.
 import { createHash } from 'node:crypto';
 import { InferenceClient } from '@nearai/inference-sdk/node';
-import { MAX_HISTORY, MAX_REPLY_TOKENS, systemPrompt } from '../../shared/mind.ts';
+import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, systemPrompt, type Mode } from '../../shared/mind.ts';
+import { practiceReply } from '../../shared/practice.ts';
 import type { PetView } from './chain.ts';
 import { config } from './config.ts';
 import { modelFor } from './pricing.ts';
@@ -21,6 +22,10 @@ export type Proof = {
 
 export type Thought = {
   reply: string;
+  /** New facts about the owner, for the diary. */
+  remember: string[];
+  /** Set when this reply ended a game round. */
+  result: 'win' | 'lose' | null;
   model: string;
   usage: { prompt_tokens: number; completion_tokens: number };
   /** Null in practice mode: nothing was verified. */
@@ -28,14 +33,8 @@ export type Thought = {
   receipt: string;
 };
 
-/** Practice mode (KITCHEN_MOCK=1): canned replies, no AI call, never presented as verified. */
+/** Practice mode (KITCHEN_MOCK=1): fixed replies (shared/practice.ts), no AI call, never presented as verified. */
 export const PRACTICE_MODE = process.env.KITCHEN_MOCK === '1';
-const PRACTICE_REPLIES = [
-  '*floats closer* Hello. I was just watching the clouds.',
-  'Ooh, tell me more. *wiggles happily*',
-  'I like it when you visit. It feels like rain on a warm day.',
-  '*yawns softly* I remember you. You are kind.',
-];
 
 const client = new InferenceClient({
   baseUrl: config.nearAiBaseUrl,
@@ -43,16 +42,21 @@ const client = new InferenceClient({
   e2ee: true,
 });
 
+/**
+ * One thought. `message` is null when Mochi speaks first: a greeting, or the start of a game round.
+ * The reply's REMEMBER and RESULT lines are split off (parseThought) after the signature check,
+ * which covers the full text the model signed.
+ */
 export async function think(
   pet: PetView,
   history: Turn[],
-  message: string,
+  message: string | null,
   memory?: string,
+  mode: Mode = { kind: 'talk' },
 ): Promise<Thought> {
   if (PRACTICE_MODE) {
-    const reply = PRACTICE_REPLIES[(pet.messages + history.length) % PRACTICE_REPLIES.length];
     return {
-      reply,
+      ...parseThought(practiceReply(pet, history, message, mode)),
       model: 'practice',
       usage: { prompt_tokens: 0, completion_tokens: 0 },
       proof: null,
@@ -66,9 +70,9 @@ export async function think(
     // GLM-5.3 Flash reasons by default; "low" keeps it to a few tokens, which a pet's chat doesn't need.
     reasoning_effort: 'low',
     messages: [
-      { role: 'system', content: systemPrompt(pet, memory) },
+      { role: 'system', content: systemPrompt(pet, memory, mode) },
       ...history.slice(-MAX_HISTORY),
-      { role: 'user', content: message },
+      { role: 'user', content: message ?? openingLine(mode) ?? '' },
     ],
   });
   const verified = await client.verifyResponse(completion.id);
@@ -76,7 +80,7 @@ export async function think(
   const hash = createHash('sha256').update(`${signedText}\n${signature}`).digest('hex');
   const usage = completion.usage ?? { prompt_tokens: 0, completion_tokens: 0 };
   return {
-    reply: completion.choices[0]?.message.content?.trim() ?? '',
+    ...parseThought(completion.choices[0]?.message.content?.trim() ?? ''),
     model,
     usage: { prompt_tokens: usage.prompt_tokens, completion_tokens: usage.completion_tokens },
     proof: { id: completion.id, kind: verified.signatureKind, signer, signedText, signature, hash },

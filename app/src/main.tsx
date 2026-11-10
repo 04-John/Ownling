@@ -30,6 +30,9 @@ import { App, Splash } from './App';
 if (TARGET === 'web' && import.meta.env.PROD && 'serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(() => undefined);
 }
+if (TARGET === 'android') {
+  import('./lib/android').then((m) => m.handleBackButton()).catch(() => undefined);
+}
 
 // Mochi's float, bounce and thinking-dot animations, once per page (reduced motion handled inside).
 const mochiStyle = document.createElement('style');
