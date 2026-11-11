@@ -40,6 +40,14 @@ export function Talk() {
   const [grewTo, setGrewTo] = useState<Stage | null>(null);
   const [unlocked, setUnlocked] = useState<Item[]>([]);
   const [hearing, setHearing] = useState(false);
+  /** Mochi's reply while it's being written, before its proof is checked. */
+  const [streaming, setStreaming] = useState<string | null>(null);
+  const streamedRef = useRef(false);
+  const onText = (text: string) => {
+    streamedRef.current = true;
+    setStreaming(text);
+    setHeadMoment('talking');
+  };
   const timers = useRef<number[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -65,7 +73,8 @@ export function Talk() {
     setPet(r.pet);
     // The client's history, so a greeting that arrived while you were typing shows up too.
     setTurns(client.history());
-    setTyping({ turn: r.reply, shown: prefersReducedMotion() ? r.reply.content.length : 0 });
+    // A streamed reply is already on screen, so it doesn't type in again.
+    setTyping({ turn: r.reply, shown: prefersReducedMotion() || streamedRef.current ? r.reply.content.length : 0 });
     setHeadMoment('talking');
     if (stageRank(r.pet.stage) > stageRank(before.stage)) setGrewTo(r.pet.stage);
     let after = r.pet;
@@ -99,13 +108,15 @@ export function Talk() {
     setUnlocked([]);
     setSending({ stage: pet.stage });
     try {
-      const r = await client.startGame(id);
+      streamedRef.current = false;
+      const r = await client.startGame(id, onText);
       setGame(r.game);
       await showReply(r, pet);
     } catch (err) {
       setError(errorText(err));
     } finally {
       setSending(null);
+      setStreaming(null);
     }
   }
 
@@ -183,7 +194,8 @@ export function Talk() {
     setHeadMoment('none');
     setTurns((t) => [...t, mine]);
     try {
-      const r = await client.talk(text, playing);
+      streamedRef.current = false;
+      const r = await client.talk(text, playing, onText);
       await showReply({ ...r, reply: { ...r.reply, proof: r.reply.proof ?? r.proof } }, pet);
     } catch (err) {
       setTurns((t) => t.filter((x) => x !== mine));
@@ -191,6 +203,7 @@ export function Talk() {
       setError(errorText(err));
     } finally {
       setSending(null);
+      setStreaming(null);
       inputRef.current?.focus();
     }
   }
@@ -295,7 +308,12 @@ export function Talk() {
             </div>
           </div>
         ) : null}
-        {sending ? (
+        {sending && streaming ? (
+          <div className="talk-reply">
+            <Bubble from="mochi" text={streaming} speaker={pet.name} />
+            <StatusTag status="pending" />
+          </div>
+        ) : sending ? (
           <div className="talk-pending">
             <Mochi
               stage={sending.stage}

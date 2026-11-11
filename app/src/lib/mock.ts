@@ -32,13 +32,19 @@ export function createMockClient(preset?: string | null): OwnlingClient {
   let diarySizeBytes = 360;
 
   /** The practice mind's reply (shared/practice.ts), charged like the practice kitchen does. */
-  async function think(message: string | null, mode: Mode): Promise<TalkResult> {
+  async function think(message: string | null, mode: Mode, onText?: (text: string) => void): Promise<TalkResult> {
     const p = need();
     if (p.hibernating) throw new Error(`${p.name} is hibernating. Feed it to wake it up.`);
     const history = turns.slice(-12).map(({ role, content }) => ({ role, content }));
     if (message) turns.push({ role: 'user', content: message, at: Date.now() });
-    await wait(1600);
+    await wait(900);
     const thought = parseThought(practiceReply(p, history, message, mode));
+    let shown = '';
+    for (const word of thought.reply.split(/(?<=\s)/)) {
+      shown += word;
+      onText?.(shown);
+      await wait(70);
+    }
     const learned = thought.remember.filter((f) => !facts.includes(f));
     facts = [...facts, ...learned];
     const cost = 0.000001;
@@ -185,15 +191,15 @@ export function createMockClient(preset?: string | null): OwnlingClient {
       if (locked) fail(`${locked.id} isn't unlocked yet`);
       return (pet = refresh({ ...p, outfit: [...outfit] }));
     },
-    talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),
-    greet: () => think(null, { kind: 'greet' }),
+    talk: (message, game, onText) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }, onText),
+    greet: (onText) => think(null, { kind: 'greet' }, onText),
     async listen() {
       await wait(1200);
       return `Hello ${need().name}, how are you today?`;
     },
-    async startGame(id) {
+    async startGame(id, onText) {
       const game: ActiveGame = id === 'guess' ? { id, thing: GUESS_THINGS[Math.floor(Math.random() * GUESS_THINGS.length)] } : { id };
-      return { ...(await think(null, { kind: 'game', game: id, thing: game.thing })), game };
+      return { ...(await think(null, { kind: 'game', game: id, thing: game.thing }, onText)), game };
     },
     history: () => [...turns],
     async diary(): Promise<DiaryView> {

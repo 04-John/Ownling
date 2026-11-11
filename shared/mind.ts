@@ -70,6 +70,28 @@ export function parseThought(raw: string): Thought {
   return { reply, remember: remember.filter(Boolean).slice(0, 2), result: result ?? null };
 }
 
+const MARKERS = ['REMEMBER:', 'RESULT:'];
+
+/**
+ * The part of a reply still being written that the owner may see: everything before a REMEMBER or
+ * RESULT line, holding back an unfinished tail that could still grow into one. It only ever grows
+ * as text arrives; parseThought gives the final reply once the stream ends.
+ */
+export function visibleSoFar(raw: string): string {
+  const marker = /(^|\n)\s*REMEMBER:|\bRESULT:/i.exec(raw);
+  let text = marker ? raw.slice(0, marker.index) : raw;
+  const upper = text.toUpperCase();
+  for (const m of MARKERS) {
+    for (let k = m.length - 1; k > 0; k--) {
+      if (upper.endsWith(m.slice(0, k)) && (text.length === k || !/[A-Z]/i.test(text[text.length - k - 1]))) {
+        text = text.slice(0, text.length - k);
+        break;
+      }
+    }
+  }
+  return text.replace(/\s+$/, '');
+}
+
 /** The owner ending a round by giving up, in their own words. */
 const GIVE_UP = /\b(i give up|give up|i quit|tell me the answer|what is the answer|what's the answer|i don'?t know)\b/i;
 

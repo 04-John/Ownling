@@ -6,6 +6,8 @@
 //                  kind: talk (default), greet (Mochi speaks first) or game (a round of riddle, guess
 //                  or rather; no message opens the round)
 //                  -> {reply, remember, result, model, usage, charged, budget, proof}
+//   POST /talk/stream  the same, streamed as newline-delimited JSON: {type: text, text} pieces as
+//                  Mochi writes, then {type: done, ...} with the checked reply (or {type: error})
 //   POST /listen?name=<pet>  Authorization: Bearer <token>; a voice clip (audio/webm, audio/mp4, ...)
 //                  -> {text}: speech to text on NEAR AI's Whisper. The clip isn't kept or logged.
 //   GET  anything else -> the built game app from STATIC_DIR, when set (one address for app and kitchen);
@@ -67,7 +69,10 @@ class HttpError extends Error {
 const lastThought = new Map<string, Promise<unknown>>();
 const CHARGE_WAIT_MS = 30_000;
 
-async function talk(req: IncomingMessage, body: unknown) {
+/** For a streamed reply: when thinking starts (headers can go out), and each new piece of text. */
+type Hooks = { onStart?: () => void; onText?: (piece: string) => void };
+
+async function talk(req: IncomingMessage, body: unknown, hooks: Hooks = {}) {
   const accountId = sessionAccount(bearer(req));
   const { tokenId, message, history, memory, mode } = parseTalk(body);
 
@@ -81,7 +86,7 @@ async function talk(req: IncomingMessage, body: unknown) {
   });
   try {
     await Promise.race([before.catch(() => undefined), new Promise((r) => setTimeout(r, CHARGE_WAIT_MS))]);
-    return await thinkAndCharge(accountId, tokenId, message, history, memory, mode, finished);
+    return await thinkAndCharge(accountId, tokenId, message, history, memory, mode, finished, hooks);
   } catch (err) {
     finished();
     throw err;
@@ -100,6 +105,7 @@ async function thinkAndCharge(
   memory: string | undefined,
   mode: Mode,
   finished: () => void,
+  hooks: Hooks,
 ) {
   const pet = await getPet(tokenId);
   if (!pet) throw new HttpError(404, 'No such pet');
@@ -115,7 +121,8 @@ async function thinkAndCharge(
   }
   if (BigInt(pet.budget) < worstCase) throw new HttpError(402, `${pet.name} is too hungry to think. Feed it.`);
 
-  const thought = await think(pet, history, message, memory, mode);
+  hooks.onStart?.();
+  const thought = await think(pet, history, message, memory, mode, hooks.onText);
   const amount = thought.proof ? usdToYocto(await costUsd(thought.model, thought.usage)) : PRACTICE_CHARGE;
   const budget = (BigInt(pet.budget) - amount).toString();
   charge(tokenId, amount, thought.receipt)
@@ -205,6 +212,39 @@ async function readJson(req: IncomingMessage): Promise<unknown> {
   }
 }
 
+/**
+ * The same as /talk, streamed: newline-delimited JSON with {type: "text", text} pieces as Mochi
+ * writes, then {type: "done", ...the /talk response} once the signature has been checked. Problems
+ * found before thinking starts come back as ordinary JSON errors; later ones as {type: "error"}.
+ */
+async function streamTalk(req: IncomingMessage, res: ServerResponse, body: unknown) {
+  let started = false;
+  const write = (line: unknown) => res.write(`${JSON.stringify(line)}
+`);
+  try {
+    const result = await talk(req, body, {
+      onStart: () => {
+        started = true;
+        res.writeHead(200, {
+          'content-type': 'application/x-ndjson; charset=utf-8',
+          'cache-control': 'no-cache, no-transform',
+          'x-accel-buffering': 'no',
+          'access-control-allow-origin': APP_ORIGIN,
+          'access-control-allow-headers': 'content-type, authorization',
+          'access-control-allow-methods': 'GET, POST, OPTIONS',
+        });
+      },
+      onText: (text) => write({ type: 'text', text }),
+    });
+    write({ type: 'done', ...result });
+  } catch (err) {
+    if (!started) throw err;
+    console.error(err);
+    write({ type: 'error', error: (err as Error).message ?? 'Kitchen error' });
+  }
+  res.end();
+}
+
 /** Voice clips heard per account in the last hour, so one player can't run up the kitchen's bill. */
 const heard = new Map<string, number[]>();
 
@@ -278,6 +318,9 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === 'POST' && req.url === '/session') {
       return send(res, 200, await startSession((await readJson(req)) as SignIn));
+    }
+    if (req.method === 'POST' && req.url === '/talk/stream') {
+      return await streamTalk(req, res, await readJson(req));
     }
     if (req.method === 'POST' && req.url === '/talk') {
       return send(res, 200, await talk(req, await readJson(req)));

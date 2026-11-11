@@ -1,7 +1,7 @@
 // Run: node --test shared/mind.test.ts
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseThought, settleRound, systemPrompt, type MindPet } from './mind.ts';
+import { parseThought, settleRound, systemPrompt, visibleSoFar, type MindPet } from './mind.ts';
 import { practiceReply } from './practice.ts';
 
 const pet: MindPet & { messages: number } = {
@@ -19,6 +19,20 @@ test('parseThought keeps the reply and takes out what the app keeps', () => {
 test('parseThought handles a plain reply and a result on the same line', () => {
   assert.deepEqual(parseThought('*floats* Hello.'), { reply: '*floats* Hello.', remember: [], result: null });
   assert.equal(parseThought('It was a clock. RESULT: LOSE').reply, 'It was a clock.');
+});
+
+test('a reply being written never shows its REMEMBER or RESULT lines, even half-arrived', () => {
+  const full = "*spins* It's a clock.\nREMEMBER: Loves riddles\nRESULT: WIN";
+  let shown = '';
+  for (let i = 1; i <= full.length; i++) {
+    const now = visibleSoFar(full.slice(0, i));
+    assert.ok(now.startsWith(shown), `grows only: "${shown}" -> "${now}"`);
+    assert.doesNotMatch(now, /REM|RES/, `nothing of a marker at ${i} chars: "${now}"`);
+    shown = now;
+  }
+  assert.equal(shown, "*spins* It's a clock.");
+  assert.equal(visibleSoFar('It was a clock. RESULT: LO'), 'It was a clock.');
+  assert.equal(visibleSoFar('The rain is warmer'), 'The rain is warmer', 'a word ending in r is not held back');
 });
 
 test('giving up ends a game round even when the model forgets the RESULT line', () => {

@@ -58,7 +58,7 @@ export function Home() {
     greetedThisSession = true;
     setGreeting('waiting');
     client
-      .greet()
+      .greet((text) => setGreeting(text))
       .then(({ reply, pet: next }) => {
         setGreeting(reply.content);
         setPet(next);

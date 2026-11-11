@@ -27,14 +27,15 @@ export interface OwnlingClient {
   dress(outfit: string[]): Promise<PetState>;
 
   /** Send a message, inside a game round when `game` is set; resolves with Mochi's reply, its
-   * proof, anything it learned and the pet after the charge. */
-  talk(message: string, game?: ActiveGame | null): Promise<TalkResult>;
+   * proof, anything it learned and the pet after the charge. `onText` gets the reply so far while
+   * Mochi writes it (shown as Pending until the proof is checked). */
+  talk(message: string, game?: ActiveGame | null, onText?: (text: string) => void): Promise<TalkResult>;
   /** Mochi speaks first, about something it remembers. */
-  greet(): Promise<TalkResult>;
+  greet(onText?: (text: string) => void): Promise<TalkResult>;
   /** Turn a voice clip into text (NEAR AI's Whisper, through the kitchen). */
   listen(clip: Blob): Promise<string>;
   /** Open a game round: Mochi asks the riddle or the question. */
-  startGame(id: GameId): Promise<TalkResult & { game: ActiveGame }>;
+  startGame(id: GameId, onText?: (text: string) => void): Promise<TalkResult & { game: ActiveGame }>;
   /** This session's conversation, oldest first. */
   history(): ChatTurn[];
 

@@ -2,7 +2,7 @@
 // signature verified against the attested model before anyone sees it.
 import { createHash } from 'node:crypto';
 import { InferenceClient } from '@nearai/inference-sdk/node';
-import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, settleRound, systemPrompt, type Mode } from '../../shared/mind.ts';
+import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, settleRound, systemPrompt, visibleSoFar, type Mode } from '../../shared/mind.ts';
 import { practiceReply } from '../../shared/practice.ts';
 import { fixName } from '../../shared/speech.ts';
 import type { PetView } from './chain.ts';
@@ -134,10 +134,17 @@ export async function think(
   message: string | null,
   memory?: string,
   mode: Mode = { kind: 'talk' },
+  /** Gets the reply's visible text piece by piece as it's written. */
+  onText?: (piece: string) => void,
 ): Promise<Thought> {
   if (PRACTICE_MODE) {
+    const thought = parseThought(practiceReply(pet, history, message, mode));
+    for (const word of thought.reply.split(/(?<=\s)/)) {
+      onText?.(word);
+      await new Promise((r) => setTimeout(r, 60));
+    }
     return {
-      ...parseThought(practiceReply(pet, history, message, mode)),
+      ...thought,
       model: 'practice',
       usage: { prompt_tokens: 0, completion_tokens: 0 },
       proof: null,
@@ -146,26 +153,50 @@ export async function think(
   }
   markUsed();
   const model = await modelFor(pet.model);
-  const completion = await client.chat.completions.create({
+  const messages = [
+    { role: 'system' as const, content: systemPrompt(pet, memory, mode) },
+    ...history.slice(-MAX_HISTORY),
+    { role: 'user' as const, content: message ?? openingLine(mode) ?? '' },
+  ];
+  // Streamed, still end-to-end encrypted: the owner sees the words as they come (onText), and the
+  // signature is checked once the whole reply has arrived, as the SDK requires.
+  const stream = await client.chat.completions.create({
     model,
     max_tokens: MAX_REPLY_TOKENS,
     // GLM-5.3 Flash reasons by default; "low" keeps it to a few tokens, which a pet's chat doesn't need.
     reasoning_effort: 'low',
-    messages: [
-      { role: 'system', content: systemPrompt(pet, memory, mode) },
-      ...history.slice(-MAX_HISTORY),
-      { role: 'user', content: message ?? openingLine(mode) ?? '' },
-    ],
-  });
-  const verified = await client.verifyResponse(completion.id);
+    stream: true,
+    stream_options: { include_usage: true },
+    messages,
+  } as never) as unknown as AsyncIterable<StreamChunk>;
+  let raw = '';
+  let id = '';
+  let usage: Usage | null = null;
+  let shown = '';
+  for await (const chunk of stream) {
+    id = chunk.id || id;
+    if (chunk.usage) usage = chunk.usage;
+    raw += chunk.choices?.[0]?.delta?.content ?? '';
+    const visible = visibleSoFar(raw);
+    if (onText && visible.length > shown.length) {
+      onText(visible.slice(shown.length));
+      shown = visible;
+    }
+  }
+  const verified = await client.verifyResponse(id);
   const { signedText, signature, signer } = verified.signature;
   const hash = createHash('sha256').update(`${signedText}\n${signature}`).digest('hex');
-  const usage = completion.usage ?? { prompt_tokens: 0, completion_tokens: 0 };
+  // If NEAR AI leaves usage out of the stream, count about four characters a token.
+  const tokens = (s: string) => Math.ceil(s.length / 4);
+  const counted = usage ?? { prompt_tokens: tokens(messages.map((m) => m.content).join('\n')), completion_tokens: tokens(raw) };
   return {
-    ...settleRound(parseThought(completion.choices[0]?.message.content?.trim() ?? ''), mode, message),
+    ...settleRound(parseThought(raw.trim()), mode, message),
     model,
-    usage: { prompt_tokens: usage.prompt_tokens, completion_tokens: usage.completion_tokens },
-    proof: { id: completion.id, kind: verified.signatureKind, signer, signedText, signature, hash },
-    receipt: `${verified.signatureKind}|${completion.id}|${hash}`.slice(0, 256),
+    usage: { prompt_tokens: counted.prompt_tokens, completion_tokens: counted.completion_tokens },
+    proof: { id, kind: verified.signatureKind, signer, signedText, signature, hash },
+    receipt: `${verified.signatureKind}|${id}|${hash}`.slice(0, 256),
   };
 }
+
+type Usage = { prompt_tokens: number; completion_tokens: number };
+type StreamChunk = { id: string; usage?: Usage | null; choices?: { delta?: { content?: string | null } }[] };

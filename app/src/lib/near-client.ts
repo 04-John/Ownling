@@ -192,14 +192,14 @@ export function createNearClient(): OwnlingClient {
    * One thought at a time: the kitchen refuses a second one for the same pet ("still thinking"), so
    * a message sent while the greeting is on its way waits for it, and sees it in the history.
    */
-  function think(message: string | null, mode: Mode): Promise<TalkResult> {
-    const run = thoughts.then(() => thinkNow(message, mode));
+  function think(message: string | null, mode: Mode, onText?: (text: string) => void): Promise<TalkResult> {
+    const run = thoughts.then(() => thinkNow(message, mode, onText));
     thoughts = run.catch(() => {});
     return run;
   }
 
   /** One thought through the kitchen. `message` is null when Mochi speaks first (greet, game start). */
-  async function thinkNow(message: string | null, mode: Mode): Promise<TalkResult> {
+  async function thinkNow(message: string | null, mode: Mode, onText?: (text: string) => void): Promise<TalkResult> {
     const view = await recentView();
     const pet = toPet(view);
     if (pet.hibernating) throw new Error(`${pet.name} is hibernating. Feed it to wake it up.`);
@@ -210,10 +210,10 @@ export function createNearClient(): OwnlingClient {
     if (said) turns.push(said);
     let res: TalkResponse;
     try {
-      res = await kitchen<TalkResponse>('/talk', {
+      res = await kitchenStream({
         tokenId: pet.tokenId, message: message ?? undefined, history, ...mode,
         memory: diaryEntry ? memoryText(diaryEntry) : undefined,
-      }, 'POST', token);
+      }, token, onText);
     } catch (err) {
       turns = turns.filter((t) => t !== said);
       throw err;
@@ -237,6 +237,51 @@ export function createNearClient(): OwnlingClient {
       spent_today: (BigInt(view.spent_today) + charged).toString(), hibernating: BigInt(budget) < HIBERNATE_BELOW,
     });
     return { reply, proof, pet: next, learned, result: res.result ?? null };
+  }
+
+  /**
+   * /talk, streamed: onText gets the reply so far as Mochi writes it, and the result arrives once
+   * the kitchen has checked the signature. A kitchen without streaming gets a plain /talk.
+   */
+  async function kitchenStream(body: unknown, bearer: string, onText?: (text: string) => void): Promise<TalkResponse> {
+    let res: Response;
+    try {
+      res = await fetch(`${config.kitchenUrl}/talk/stream`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', authorization: `Bearer ${bearer}` },
+        body: JSON.stringify(body),
+      });
+    } catch {
+      throw new Error("Can't reach the kitchen right now");
+    }
+    if (res.status === 404 || !res.body) return kitchen<TalkResponse>('/talk', body, 'POST', bearer);
+    if (!res.ok) {
+      const json = await res.json().catch(() => ({}));
+      throw new Error(json.error ?? `The kitchen answered ${res.status}`);
+    }
+    const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+    let buffer = '';
+    let text = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += value;
+      for (let nl = buffer.indexOf('\n'); nl >= 0; nl = buffer.indexOf('\n')) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        if (!line) continue;
+        const msg = JSON.parse(line) as { type: string; text?: string; error?: string } & TalkResponse;
+        if (msg.type === 'text') {
+          text += msg.text ?? '';
+          onText?.(text);
+        } else if (msg.type === 'done') {
+          return msg;
+        } else if (msg.type === 'error') {
+          throw new Error(msg.error ?? 'Kitchen error');
+        }
+      }
+    }
+    throw new Error('The kitchen stopped answering. Try again.');
   }
 
   async function kitchen<T>(path: string, body: unknown, method = 'POST', bearer?: string): Promise<T> {
@@ -322,9 +367,10 @@ export function createNearClient(): OwnlingClient {
       return toPet(await call<PetView>('dress', { token_id: pet.tokenId, outfit }));
     },
 
-    talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),
+    talk: (message, game, onText) =>
+      think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }, onText),
 
-    greet: () => think(null, { kind: 'greet' }),
+    greet: (onText) => think(null, { kind: 'greet' }, onText),
 
     async listen(clip) {
       const pet = toPet(await recentView());
@@ -344,11 +390,11 @@ export function createNearClient(): OwnlingClient {
       return String(json.text ?? '').trim();
     },
 
-    async startGame(id) {
+    async startGame(id, onText) {
       const game: ActiveGame = id === 'guess'
         ? { id, thing: GUESS_THINGS[Math.floor(Math.random() * GUESS_THINGS.length)] }
         : { id };
-      return { ...(await think(null, { kind: 'game', game: id, thing: game.thing })), game };
+      return { ...(await think(null, { kind: 'game', game: id, thing: game.thing }, onText)), game };
     },
 
     history: () => [...turns],

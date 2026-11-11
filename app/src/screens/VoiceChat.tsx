@@ -14,7 +14,7 @@ import type { ChatTurn } from '../lib/types';
 import type { Moment } from '../components/Mochi';
 import { Mochi } from '../components/Mochi';
 import { Bubble } from '../components/Bubble';
-import { ProofTag } from '../components/ProofTag';
+import { ProofTag, StatusTag } from '../components/ProofTag';
 import { BackButton, Button, ErrorText } from '../components/ui';
 
 type Phase = 'ready' | 'listening' | 'hearing' | 'thinking' | 'speaking';
@@ -95,7 +95,7 @@ export function VoiceChat() {
       if (text) {
         setSaid(text);
         setPhase('thinking');
-        const r = await client.talk(text);
+        const r = await client.talk(text, null, (partial) => setReply({ role: 'assistant', content: partial, at: Date.now() }));
         if (!mounted.current) return;
         setPet(r.pet);
         setReply({ ...r.reply, proof: r.reply.proof ?? r.proof });
@@ -147,7 +147,7 @@ export function VoiceChat() {
         {reply && phase !== 'hearing' ? (
           <div className="talk-reply">
             <Bubble from="mochi" text={reply.content} speaker={pet.name} />
-            {reply.proof ? <ProofTag proof={reply.proof} practiceMode={client.config.practiceMode} /> : null}
+            {reply.proof ? <ProofTag proof={reply.proof} practiceMode={client.config.practiceMode} /> : <StatusTag status="pending" />}
           </div>
         ) : null}
       </div>
