@@ -64,6 +64,7 @@ export function createNearClient(): OwnlingClient {
   let diaryEntry: DiaryEntry | null = null;
   let turns: ChatTurn[] = [];
   let queue: Promise<unknown> = Promise.resolve();
+  let thoughts: Promise<unknown> = Promise.resolve();
 
   kitchen<{ practiceMode: boolean }>('/health', null, 'GET')
     .then((h) => { config.practiceMode = h.practiceMode; })
@@ -175,8 +176,18 @@ export function createNearClient(): OwnlingClient {
     await call('save_diary', { token_id: tokenId, ciphertext: sealed.ciphertext, hash: sealed.hash });
   }
 
+  /**
+   * One thought at a time: the kitchen refuses a second one for the same pet ("still thinking"), so
+   * a message sent while the greeting is on its way waits for it, and sees it in the history.
+   */
+  function think(message: string | null, mode: Mode): Promise<TalkResult> {
+    const run = thoughts.then(() => thinkNow(message, mode));
+    thoughts = run.catch(() => {});
+    return run;
+  }
+
   /** One thought through the kitchen. `message` is null when Mochi speaks first (greet, game start). */
-  async function think(message: string | null, mode: Mode): Promise<TalkResult> {
+  async function thinkNow(message: string | null, mode: Mode): Promise<TalkResult> {
     const pet = await currentPet();
     if (pet.hibernating) throw new Error(`${pet.name} is hibernating. Feed it to wake it up.`);
     const token = await sessionToken();
@@ -293,6 +304,24 @@ export function createNearClient(): OwnlingClient {
     talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),
 
     greet: () => think(null, { kind: 'greet' }),
+
+    async listen(clip) {
+      const pet = await currentPet();
+      const token = await sessionToken();
+      let res: Response;
+      try {
+        res = await fetch(`${config.kitchenUrl}/listen?name=${encodeURIComponent(pet.name)}`, {
+          method: 'POST',
+          headers: { 'content-type': clip.type || 'audio/webm', authorization: `Bearer ${token}` },
+          body: clip,
+        });
+      } catch {
+        throw new Error("Can't reach the kitchen right now");
+      }
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(json.error ?? `The kitchen answered ${res.status}`);
+      return String(json.text ?? '').trim();
+    },
 
     async startGame(id) {
       const game: ActiveGame = id === 'guess'

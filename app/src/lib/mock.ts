@@ -187,6 +187,10 @@ export function createMockClient(preset?: string | null): OwnlingClient {
     },
     talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),
     greet: () => think(null, { kind: 'greet' }),
+    async listen() {
+      await wait(1200);
+      return `Hello ${need().name}, how are you today?`;
+    },
     async startGame(id) {
       const game: ActiveGame = id === 'guess' ? { id, thing: GUESS_THINGS[Math.floor(Math.random() * GUESS_THINGS.length)] } : { id };
       return { ...(await think(null, { kind: 'game', game: id, thing: game.thing })), game };

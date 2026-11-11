@@ -28,6 +28,17 @@ export const IconBack = (p: IconProps) => (
     <path d="M15 6l-6 6 6 6" />
   </Svg>
 );
+export const IconMic = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="9" y="3" width="6" height="11" rx="3" />
+    <path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" />
+  </Svg>
+);
+export const IconStop = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" />
+  </Svg>
+);
 /** A coat hanger: the wardrobe. */
 export const IconHanger = (p: IconProps) => (
   <Svg {...p}>

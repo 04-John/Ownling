@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { InferenceClient } from '@nearai/inference-sdk/node';
 import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, settleRound, systemPrompt, type Mode } from '../../shared/mind.ts';
 import { practiceReply } from '../../shared/practice.ts';
+import { fixName } from '../../shared/speech.ts';
 import type { PetView } from './chain.ts';
 import { config } from './config.ts';
 import { modelFor } from './pricing.ts';
@@ -41,6 +42,32 @@ const client = new InferenceClient({
   apiKey: config.nearAiApiKey,
   e2ee: true,
 });
+
+/** NEAR AI's speech-to-text model (attested, verifiable in its model list). */
+export const LISTEN_MODEL = 'openai/whisper-large-v3';
+const AUDIO_EXT: Record<string, string> = { 'audio/webm': 'webm', 'audio/ogg': 'ogg', 'audio/mp4': 'm4a', 'audio/mpeg': 'mp3', 'audio/wav': 'wav', 'audio/x-wav': 'wav' };
+
+/**
+ * Speech to text on NEAR AI's Whisper. `hint` (the pet's name) helps it spell the name right. The
+ * clip goes to NEAR AI over TLS (NEAR AI offers no end-to-end encryption for audio) and is not
+ * kept anywhere; only the text comes back.
+ */
+export async function transcribe(audio: Buffer, type: string, hint?: string): Promise<string> {
+  if (PRACTICE_MODE) return `Hello ${hint ?? 'Mochi'}, how are you today?`;
+  const base = type.split(';')[0].trim();
+  const form = new FormData();
+  form.append('model', LISTEN_MODEL);
+  if (hint) form.append('prompt', hint);
+  form.append('file', new Blob([new Uint8Array(audio)], { type: base }), `voice.${AUDIO_EXT[base] ?? 'webm'}`);
+  const res = await fetch(`${config.nearAiBaseUrl}/audio/transcriptions`, {
+    method: 'POST',
+    headers: { authorization: `Bearer ${config.nearAiApiKey}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(`NEAR AI couldn't hear that clip (${res.status}: ${(await res.text()).slice(0, 160)})`);
+  const json = (await res.json()) as { text?: string };
+  return fixName((json.text ?? '').trim(), hint);
+}
 
 /**
  * The first request on a new connection takes NEAR AI 20 s to 2 min (key exchange and attestation);

@@ -20,7 +20,7 @@ The free host sleeps after 15 idle minutes. If it was asleep, the first page loa
 | 1 | Open https://ownling.onrender.com and tap **Next** twice | Three short steps: Mochi is an AI friend that remembers you, every thought costs a little food, and Mochi is yours, not ours. Then **Create my account**. |
 | 2 | Tap **Create my account** | A 12-word recovery phrase. Behind it, the sponsor account `ownling.testnet` created a named account `cloud-NNNNN.ownling.testnet` for you, holding 1 testnet NEAR. The key exists only in your browser. |
 | 3 | Tap **I saved it**, then **Adopt Mochi** | Home. `adopt` minted Mochi as an NFT and put the deposit, minus storage, into its food budget (0.49 testnet NEAR, "Mochi can think for 24 more days"). Mochi speaks first: the egg hatches with its first words. Under its name: "19 more chats or games until Mochi is a child". |
-| 4 | Tap **Talk** and send "My name is Ada" | Mochi's reply with a tag under it: **Verified** if the NEAR AI signature on the reply checked out, **No proof** otherwise. Under it: "Mochi will remember: Their name is Ada". The kitchen charged Mochi's budget for that reply on chain. |
+| 4 | Tap **Talk** and send "My name is Ada", or tap the microphone and say it | Mochi's reply with a tag under it: **Verified** if the NEAR AI signature on the reply checked out, **No proof** otherwise. Under it: "Mochi will remember: Their name is Ada". The kitchen charged Mochi's budget for that reply on chain. |
 | 5 | Tap **Play**, then **Riddles**, and answer | Mochi asks a riddle, gives a hint after a wrong guess, and says whether you solved it. A win shows "You won this round. Bond +1." and calls `play`, which adds a bond point on chain (at most one every 10 minutes). **Guess my thing** and **Would you rather** work the same way; Mochi remembers what you'd rather. |
 | 6 | Tap **Feed**, choose **Shower**, then **Feed 0.1** | The runway grows by about 5 days. Food is the AI budget: 0.1 testnet NEAR moved from your account into Mochi's. |
 | 7 | Tap the hanger icon (top right) | **Mochi's wardrobe**: 9 items for three slots (hat, scarf, something to hold). The rain hat and umbrella are free. The others unlock as your bond grows from won games, or as Mochi grows up. Try some on, then tap **Wear this**: `dress` saves the outfit with the NFT, and the wallet picture (`nft_token` media) now shows Mochi wearing it. |
@@ -81,6 +81,7 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Owner sign-in to the kitchen | NEP-413 signed message, replay-protected nonce | `kitchen/src/auth.ts` |
 | Diary key only the owner can rebuild | Deterministic NEP-413 signature, then HKDF, then AES-GCM | `shared/diary.ts` |
 | Private inference with a checkable reply | NEAR AI Cloud: TEE models, end-to-end encryption, response signatures (`@nearai/inference-sdk`) | `kitchen/src/brain.ts`; `wake/src/main.ts` |
+| Talking out loud | NEAR AI Cloud speech to text (`openai/whisper-large-v3`, an attested model) | `app/src/lib/voice.ts` (recorded and converted to 16 kHz WAV in the app); `kitchen/src/brain.ts`: `transcribe`; `kitchen/src/server.ts`: `/listen` |
 | A client that needs no Ownling server | Public RPC (`test.rpc.fastnear.com`) and the FastNEAR key lookup | `wake/src/main.ts` |
 
 ### Deployed on testnet
@@ -98,6 +99,7 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Contract: adopt, feed, charge with receipt, daily cap, change kitchen, play, diary, hibernation, growth, transfer | Done. 25 unit tests. |
 | Game loop: intro, Mochi greets first, three games with bond on a win, memory you can see ("Mochi will remember"), growth goal and the growing-up moment | Done. Tested in a browser against testnet, and the mind on live NEAR AI. |
 | Dressing: 9 items, unlocked by bond or stage, saved with the NFT and shown in the wallet picture | Done. 7 contract tests and 4 app tests. The upgraded contract is on testnet, and an outfit was saved and read back from `get_pet` and `nft_token`. |
+| Talking out loud (tap the microphone in Talk) | Done. Tested on live NEAR AI in headless Edge with a recorded clip. The words became the message, and Mochi answered with a verified reply that remembered them. The Android app asks for microphone permission the first time. |
 | Wallet image by stage | Done |
 | No-wallet sign-up and recovery by phrase | Done. Tested in a browser on the live site. |
 | Encrypted diary | Done. 5 unit tests and a testnet round trip. |
@@ -132,7 +134,7 @@ You need Node 24 or later. For the contract you also need Rust (pinned in `contr
 | Do | See |
 |---|---|
 | `cd contract && cargo test` | `25 passed; 0 failed` |
-| `node --test shared/diary.test.ts shared/mind.test.ts shared/wardrobe.test.ts` | `pass 15`, `fail 0` (diary encryption; the mind's modes, parsing and practice games; the wardrobe's unlock rules and placement) |
+| `node --test shared/diary.test.ts shared/mind.test.ts shared/wardrobe.test.ts shared/speech.test.ts` | `pass 18`, `fail 0` (diary encryption; the mind's modes, parsing and practice games; the wardrobe's unlock rules and placement; speech clean-up) |
 | `cd app && npm ci && npm run demo` | The whole game on http://localhost:5173 with sample data and practice replies: intro, greeting, games, memory, growth. No chain, no keys. Add `?preset=almost-child#/talk` to the address to see Mochi grow up after one message. |
 | `cd contract && cargo near build non-reproducible-wasm` | `target/near/ownling.wasm` |
 
@@ -159,6 +161,7 @@ Both apps carry their own copy of the game, built with `--mode android` or `--mo
 - **Player key.** The app makes a full-access key for the player's own account and keeps it in the browser's local storage. The 12-word phrase restores it. Anyone with access to that browser profile controls the pet. This is acceptable for a testnet game, but not for real money.
 - **Kitchen key.** It can charge only pets whose owner chose this kitchen, never past the daily cap or the budget. It can't move pets, change their settings or decrypt diaries. Owners can switch kitchens at any time.
 - **What the kitchen sees.** It sees the message text in transit, because it forwards the text to NEAR AI. It logs token counts, not text. Between the kitchen and the model, the chat is end-to-end encrypted to the model's TEE. The wake page removes the kitchen entirely.
+- **Voice clips.** A clip goes from the app to the kitchen, then to NEAR AI's Whisper over TLS. It isn't end-to-end encrypted the way text replies are, because NEAR AI doesn't offer that for audio, and Ownling doesn't check a signature on the transcript. The kitchen doesn't store or log clips. Only the text becomes the message.
 - **Diary.** It's encrypted in the browser with AES-GCM. The key comes from the owner's signature over a fixed message and is never sent anywhere. Only ciphertext and its hash go on chain.
 - **Contract.** It has no admin or upgrade methods. Until its full-access key is deleted (see Feature status), the deployer could still redeploy it.
 - **Public by design.** A pet's name, persona text, stage, budget and charges are public on chain.

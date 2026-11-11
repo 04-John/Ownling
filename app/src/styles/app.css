@@ -438,6 +438,15 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
   background: var(--ow-rain); color: var(--ow-on-rain);
 }
 .composer__send:disabled { opacity: 0.6; cursor: default; }
+.composer__mic {
+  width: 48px; height: 48px; flex: none; border: 1px solid var(--ow-line); border-radius: 50%; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--ow-mist); color: var(--ow-ink);
+}
+.composer__mic:disabled { opacity: 0.6; cursor: default; }
+.composer__mic--on { border-color: var(--ow-storm); background: var(--ow-storm); color: #FFFFFF; animation: mic-pulse 1.4s ease-in-out infinite; }
+@keyframes mic-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--ow-storm) 25%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .composer__mic--on { animation: none; } }
 
 /* ---------- Diary ---------- */
 .status-chip { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: var(--ow-dusk); }

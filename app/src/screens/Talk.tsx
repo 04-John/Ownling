@@ -15,7 +15,8 @@ import type { Moment } from '../components/Mochi';
 import { Mochi } from '../components/Mochi';
 import { Bubble, withActions } from '../components/Bubble';
 import { ProofTag, StatusTag, shownStatus } from '../components/ProofTag';
-import { IconSend } from '../components/Icons';
+import { IconMic, IconSend, IconStop } from '../components/Icons';
+import { canRecord, toWav, useRecorder } from '../lib/voice';
 import { BackButton, Button, ErrorText } from '../components/ui';
 
 const TYPE_MS = 22; // per tick
@@ -38,6 +39,7 @@ export function Talk() {
   const [roundEnd, setRoundEnd] = useState<{ result: 'win' | 'lose'; bond: string | null } | null>(null);
   const [grewTo, setGrewTo] = useState<Stage | null>(null);
   const [unlocked, setUnlocked] = useState<Item[]>([]);
+  const [hearing, setHearing] = useState(false);
   const timers = useRef<number[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +63,8 @@ export function Talk() {
    * ended it. `before` is the pet as it was when the message was sent. */
   async function showReply(r: TalkResult, before: PetState) {
     setPet(r.pet);
-    setTurns((t) => [...t, r.reply]);
+    // The client's history, so a greeting that arrived while you were typing shows up too.
+    setTurns(client.history());
     setTyping({ turn: r.reply, shown: prefersReducedMotion() ? r.reply.content.length : 0 });
     setHeadMoment('talking');
     if (stageRank(r.pet.stage) > stageRank(before.stage)) setGrewTo(r.pet.stage);
@@ -138,9 +141,38 @@ export function Talk() {
     endRef.current?.scrollIntoView({ block: 'end', behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
   }, [turns.length, sending, typing?.shown, error]);
 
-  async function send(e: FormEvent) {
+  function send(e: FormEvent) {
     e.preventDefault();
-    const text = draft.trim();
+    void say(draft.trim());
+  }
+
+  /** The microphone: tap to start, tap again (or 30 s) to stop; the words go out as a message. */
+  const voice = useRecorder(async (clip) => {
+    setHearing(true);
+    setError(null);
+    try {
+      const text = await client.listen(await toWav(clip));
+      if (text) await say(text);
+      else setError(`${pet.name} didn't catch that. Try again, a little closer.`);
+    } catch (err) {
+      setError(errorText(err));
+    } finally {
+      setHearing(false);
+    }
+  });
+
+  async function toggleMic() {
+    if (voice.recording) return voice.stop();
+    setError(null);
+    try {
+      await voice.start();
+    } catch (err) {
+      const denied = err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'SecurityError');
+      setError(denied ? 'Allow the microphone to talk out loud.' : "The microphone didn't start.");
+    }
+  }
+
+  async function say(text: string) {
     if (!text || sending || pet.hibernating) return;
     const mine: ChatTurn = { role: 'user', content: text, at: Date.now() };
     setDraft('');
@@ -217,7 +249,8 @@ export function Talk() {
                   ) : (
                     <>
                       <Bubble from="mochi" text={t.content} speaker={pet.name} />
-                      <ProofTag proof={t.proof} practiceMode={practice} />
+                      {/* Replies loaded from the diary carry no proof, so they show no tag. */}
+                      {t.proof ? <ProofTag proof={t.proof} practiceMode={practice} /> : null}
                       {t.learned?.map((fact) => (
                         <p key={fact} className="learned">
                           {pet.name} will remember: {fact}
@@ -291,14 +324,30 @@ export function Talk() {
             id="say"
             ref={inputRef}
             className="composer__input"
-            placeholder={playing ? PLACEHOLDER[playing.id] : `Say something to ${pet.name}`}
+            placeholder={
+              voice.recording ? 'Listening… tap ■ to send'
+                : hearing ? `${pet.name} is listening…`
+                  : playing ? PLACEHOLDER[playing.id] : `Say something to ${pet.name}`
+            }
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             autoComplete="off"
             enterKeyHint="send"
             maxLength={1000}
-            disabled={pet.hibernating}
+            disabled={pet.hibernating || voice.recording || hearing}
           />
+          {canRecord() && !pet.hibernating ? (
+            <button
+              type="button"
+              className={voice.recording ? 'composer__mic composer__mic--on' : 'composer__mic'}
+              aria-label={voice.recording ? 'Stop and send' : 'Talk out loud'}
+              aria-pressed={voice.recording}
+              onClick={toggleMic}
+              disabled={!!sending || hearing}
+            >
+              {voice.recording ? <IconStop /> : <IconMic />}
+            </button>
+          ) : null}
           <button
             type="submit"
             className="composer__send"

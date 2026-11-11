@@ -1,7 +1,7 @@
 // Ownling for Windows: the game in its own phone-sized window. The game's files ship inside the
 // app (app/, built by `npm run build:windows` in ../app) and load from a private app:// address, so
 // the app opens even if the website is down. Talking to Mochi still goes to the hosted kitchen.
-const { app, BrowserWindow, Menu, nativeTheme, net, protocol, shell } = require('electron');
+const { app, BrowserWindow, Menu, nativeTheme, net, protocol, session, shell } = require('electron');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
 
@@ -61,6 +61,8 @@ if (!app.requestSingleInstanceLock()) {
   });
   app.whenReady().then(() => {
     protocol.handle('app', serveAppFile);
+    // The only permission the game asks for is the microphone, for talking out loud.
+    session.defaultSession.setPermissionRequestHandler((_contents, permission, callback) => callback(permission === 'media'));
     Menu.setApplicationMenu(null);
     createWindow();
   });

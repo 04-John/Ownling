@@ -6,6 +6,8 @@
 //                  kind: talk (default), greet (Mochi speaks first) or game (a round of riddle, guess
 //                  or rather; no message opens the round)
 //                  -> {reply, remember, result, model, usage, charged, budget, proof}
+//   POST /listen?name=<pet>  Authorization: Bearer <token>; a voice clip (audio/webm, audio/mp4, ...)
+//                  -> {text}: speech to text on NEAR AI's Whisper. The clip isn't kept or logged.
 //   GET  anything else -> the built game app from STATIC_DIR, when set (one address for app and kitchen);
 //        /download opens its Get the app screen
 // The kitchen never logs what owners or pets say.
@@ -14,7 +16,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { extname, resolve, sep } from 'node:path';
 import { AuthError, sessionAccount, startSession, type SignIn } from './auth.ts';
 import { GAMES, GUESS_THINGS, type GameId, type Mode } from '../../shared/mind.ts';
-import { PRACTICE_MODE, think, warmUp, type Turn } from './brain.ts';
+import { PRACTICE_MODE, think, transcribe, warmUp, type Turn } from './brain.ts';
 import { charge, getPet } from './chain.ts';
 import { config } from './config.ts';
 import { costUsd, modelFor, usdToYocto } from './pricing.ts';
@@ -36,6 +38,10 @@ const CONTENT_TYPES: Record<string, string> = {
   '.woff2': 'font/woff2',
 };
 const MAX_BODY_BYTES = 64 * 1024;
+/** 30 seconds of 16 kHz mono WAV is under 1 MB. */
+const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
+const MAX_CLIPS_PER_HOUR = 60;
+const HOUR_MS = 60 * 60 * 1000;
 const MAX_MESSAGE = 500;
 const MAX_MEMORY = 4_000;
 const MAX_TURN = 1_000;
@@ -147,19 +153,43 @@ function bearer(req: IncomingMessage): string | undefined {
   return header?.startsWith('Bearer ') ? header.slice(7) : undefined;
 }
 
-async function readJson(req: IncomingMessage): Promise<unknown> {
+async function readBody(req: IncomingMessage, max: number): Promise<Buffer> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const chunk of req) {
     size += (chunk as Buffer).length;
-    if (size > MAX_BODY_BYTES) throw new HttpError(413, 'Request too large');
+    if (size > max) throw new HttpError(413, 'Request too large');
     chunks.push(chunk as Buffer);
   }
+  return Buffer.concat(chunks);
+}
+
+async function readJson(req: IncomingMessage): Promise<unknown> {
+  const body = await readBody(req, MAX_BODY_BYTES);
   try {
-    return JSON.parse(Buffer.concat(chunks).toString('utf8') || '{}');
+    return JSON.parse(body.toString('utf8') || '{}');
   } catch {
     throw new HttpError(400, 'Body must be JSON');
   }
+}
+
+/** Voice clips heard per account in the last hour, so one player can't run up the kitchen's bill. */
+const heard = new Map<string, number[]>();
+
+/** Speech to text for a signed-in owner. The clip is passed to NEAR AI and not kept or logged. */
+async function listen(req: IncomingMessage) {
+  const accountId = sessionAccount(bearer(req));
+  const type = String(req.headers['content-type'] ?? '');
+  if (!/^audio\//.test(type)) throw new HttpError(415, 'Send a voice clip');
+  const now = Date.now();
+  const recent = (heard.get(accountId) ?? []).filter((t) => now - t < HOUR_MS);
+  if (recent.length >= MAX_CLIPS_PER_HOUR) throw new HttpError(429, 'That is a lot of talking. Try typing for a while.');
+  heard.set(accountId, [...recent, now]);
+  const audio = await readBody(req, MAX_AUDIO_BYTES);
+  if (audio.length < 1_000) throw new HttpError(400, "That clip was too short to hear");
+  // The pet's name, only as a spelling hint for the speech model.
+  const name = new URL(req.url ?? '/', 'http://x').searchParams.get('name')?.replace(/[^\p{L}\p{N} '-]/gu, '').slice(0, 24);
+  return { text: await transcribe(audio, type, name || undefined) };
 }
 
 function send(res: ServerResponse, status: number, body: unknown) {
@@ -219,6 +249,9 @@ const server = createServer(async (req, res) => {
     }
     if (req.method === 'POST' && req.url === '/talk') {
       return send(res, 200, await talk(req, await readJson(req)));
+    }
+    if (req.method === 'POST' && req.url?.startsWith('/listen')) {
+      return send(res, 200, await listen(req));
     }
     if (STATIC_DIR && req.method === 'GET' && /^\/download\/?$/.test(req.url ?? '')) {
       res.writeHead(302, { location: '/#/download' });

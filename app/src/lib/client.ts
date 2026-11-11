@@ -31,6 +31,8 @@ export interface OwnlingClient {
   talk(message: string, game?: ActiveGame | null): Promise<TalkResult>;
   /** Mochi speaks first, about something it remembers. */
   greet(): Promise<TalkResult>;
+  /** Turn a voice clip into text (NEAR AI's Whisper, through the kitchen). */
+  listen(clip: Blob): Promise<string>;
   /** Open a game round: Mochi asks the riddle or the question. */
   startGame(id: GameId): Promise<TalkResult & { game: ActiveGame }>;
   /** This session's conversation, oldest first. */
