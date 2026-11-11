@@ -3,10 +3,14 @@
 import { moodFor, runwayDays, stageFor } from '../../../design/mochi/mochi';
 import { GUESS_THINGS, parseThought, type Mode } from '../../../shared/mind';
 import { practiceReply } from '../../../shared/practice';
+import { isUnlocked, itemById } from '../../../shared/wardrobe';
 import type { OwnlingClient } from './client';
 import type { Account, ActiveGame, ChatTurn, DiaryView, PetState, Proof, TalkResult } from './types';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const fail = (message: string): never => {
+  throw new Error(message);
+};
 const PLAY_COOLDOWN_MS = 10 * 60 * 1000;
 const PHRASE = 'river cloud gentle orbit maple quiet lantern drift echo velvet harbor bloom';
 
@@ -73,7 +77,7 @@ export function createMockClient(preset?: string | null): OwnlingClient {
         foodNear, dailyCapNear: 0.02, spentTodayNear: 0,
         runwayDays: null, hibernating: false, hasDiary: messages > 0,
         kitchen: 'kitchen.ownling.testnet', model: 'z-ai/glm-5.3-flash',
-        contractId: 'pets.ownling.testnet', playReadyAt: null,
+        contractId: 'pets.ownling.testnet', playReadyAt: null, outfit: [],
       });
     const verified = (receiptHash: string): Proof => ({
       status: 'verified', model: 'z-ai/glm-5.3-flash', costNear: 0.000024, receiptHash, signatureKind: 'provider_tee',
@@ -156,7 +160,7 @@ export function createMockClient(preset?: string | null): OwnlingClient {
         foodNear: depositNear - 0.0106, dailyCapNear: 0.02, spentTodayNear: 0,
         runwayDays: null, hibernating: false, hasDiary: false,
         kitchen: 'kitchen.ownling.testnet', model: 'z-ai/glm-5.3-flash',
-        contractId: 'pets.ownling.testnet', playReadyAt: null,
+        contractId: 'pets.ownling.testnet', playReadyAt: null, outfit: [],
       });
       return pet;
     },
@@ -171,6 +175,15 @@ export function createMockClient(preset?: string | null): OwnlingClient {
       if (p.playReadyAt) throw new Error(`${p.name} needs a rest before playing again`);
       lastPlayed = Date.now();
       return (pet = refresh({ ...p, bond: p.bond + 1 }));
+    },
+    async dress(outfit) {
+      await wait(900);
+      const p = need();
+      const items = outfit.map((id) => itemById(id) ?? fail(`There is no item called ${id}`));
+      if (new Set(items.map((i) => i.slot)).size !== items.length) fail('One item per slot');
+      const locked = items.find((i) => !isUnlocked(i, p));
+      if (locked) fail(`${locked.id} isn't unlocked yet`);
+      return (pet = refresh({ ...p, outfit: [...outfit] }));
     },
     talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),
     greet: () => think(null, { kind: 'greet' }),

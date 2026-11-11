@@ -3,7 +3,9 @@
 //! Each ownling is a NEP-171 NFT that also carries its personality, its growth, its own food budget
 //! (NEAR that pays for the AI it thinks with) and an encrypted diary that only the owner who wrote
 //! it can read. Only the kitchen the owner picked can charge the budget, never more than the
-//! owner's daily cap, and every charge carries a receipt. There are no admin methods: once the
+//! owner's daily cap, and every charge carries a receipt. Owners dress their pet in outfits it has
+//! earned (by bond or by growing up); the outfit stays with the NFT and shows in its wallet
+//! picture. There are no admin methods: once the
 //! contract account's keys are removed, nobody (including us) can change a pet but its owner.
 
 use std::collections::HashMap;
@@ -41,6 +43,51 @@ const MAX_MODEL: usize = 100;
 const MAX_RECEIPT: usize = 256;
 const MAX_DIARY: usize = 16_384;
 const MAX_HASH: usize = 128;
+const MAX_OUTFIT: usize = 3;
+
+/// The wardrobe: items, what unlocks each (bond or stage), their art and where each slot sits at
+/// every stage. The app reads the same file, so it can only offer what this contract allows.
+const WARDROBE_JSON: &str = include_str!("../../shared/wardrobe.json");
+
+#[derive(near_sdk::serde::Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+struct Wardrobe {
+    anchors: HashMap<String, SlotAnchors>,
+    items: Vec<WardrobeItem>,
+}
+
+#[derive(near_sdk::serde::Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+struct SlotAnchors {
+    scale: f64,
+    hat: [f64; 2],
+    scarf: [f64; 2],
+    item: [f64; 2],
+}
+
+#[derive(near_sdk::serde::Deserialize)]
+#[serde(crate = "near_sdk::serde")]
+struct WardrobeItem {
+    id: String,
+    slot: String,
+    bond: u64,
+    stage: String,
+    svg: String,
+}
+
+fn wardrobe() -> Wardrobe {
+    near_sdk::serde_json::from_str(WARDROBE_JSON).unwrap_or_else(|_| env::panic_str("Bad wardrobe"))
+}
+
+fn stage_rank(stage: &str) -> u8 {
+    match stage {
+        "egg" => 0,
+        "baby" => 1,
+        "child" => 2,
+        "teen" => 3,
+        _ => 4,
+    }
+}
 
 #[derive(BorshStorageKey)]
 #[near]
@@ -52,6 +99,8 @@ enum StorageKey {
     Diaries,
     Earnings,
     Art,
+    /// Not a field of Contract (see `outfits()`), so adding it needed no state migration.
+    Outfits,
 }
 
 /// The wallet pictures, as data URIs, stored once and chosen per pet when a wallet asks: the
@@ -137,6 +186,8 @@ pub struct PetView {
     pub last_played_at: U64,
     pub hibernating: bool,
     pub has_diary: bool,
+    /// Wardrobe item ids the pet wears (shared/wardrobe.json).
+    pub outfit: Vec<String>,
 }
 
 #[near(serializers = [json])]
@@ -353,6 +404,44 @@ impl Contract {
         self.view(&token_id)
     }
 
+    /// Dress the pet: at most one item per slot (hat, scarf, held item), each one earned by bond or
+    /// by growing up (shared/wardrobe.json). The outfit belongs to the pet, so it goes with it to a
+    /// new owner and shows in the wallet picture; the pet pays its storage from its food. An empty
+    /// list takes everything off.
+    pub fn dress(&mut self, token_id: TokenId, outfit: Vec<String>) -> PetView {
+        self.assert_owner(&token_id);
+        require!(outfit.len() <= MAX_OUTFIT, "An outfit has at most 3 items");
+        {
+            let wardrobe = wardrobe();
+            let pet = self.pet(&token_id);
+            let mut used: Vec<&str> = Vec::new();
+            for id in &outfit {
+                let item = wardrobe
+                    .items
+                    .iter()
+                    .find(|i| &i.id == id)
+                    .unwrap_or_else(|| env::panic_str(&format!("There is no item called {id}")));
+                require!(!used.contains(&item.slot.as_str()), "One item per slot");
+                require!(
+                    pet.bond >= item.bond && stage_rank(pet.stage()) >= stage_rank(&item.stage),
+                    format!("{id} isn't unlocked yet")
+                );
+                used.push(&item.slot);
+            }
+        }
+        let storage_before = env::storage_usage();
+        let mut outfits = Self::outfits();
+        if outfit.is_empty() {
+            outfits.remove(&token_id);
+        } else {
+            outfits.insert(token_id.clone(), outfit.clone());
+        }
+        outfits.flush();
+        self.settle_storage(&token_id, storage_before);
+        emit("dressed", json!({ "token_id": token_id, "outfit": outfit }));
+        self.view(&token_id)
+    }
+
     /// Store the owner's encrypted diary. The pet pays the storage out of its food (memory costs
     /// food); shrinking the diary gives the difference back.
     pub fn save_diary(&mut self, token_id: TokenId, ciphertext: String, hash: String) -> NearToken {
@@ -445,12 +534,24 @@ impl Contract {
         self.pets.get_mut(token_id).unwrap_or_else(|| env::panic_str("No such pet"))
     }
 
-    /// The token as wallets see it: its picture follows the pet's stage, or asleep when hibernating.
+    /// Outfits by pet. Kept out of the Contract struct and opened on demand, so adding outfits to
+    /// an already deployed contract needed no state migration.
+    fn outfits() -> LookupMap<TokenId, Vec<String>> {
+        LookupMap::new(StorageKey::Outfits)
+    }
+
+    fn outfit_of(token_id: &TokenId) -> Vec<String> {
+        Self::outfits().get(token_id).cloned().unwrap_or_default()
+    }
+
+    /// The token as wallets see it: its picture follows the pet's stage, or asleep when hibernating,
+    /// with the pet's outfit drawn on.
     fn with_art(&self, mut token: Token) -> Token {
         if let (Some(art), Some(pet), Some(metadata)) =
             (self.art.get().as_ref(), self.pets.get(&token.token_id), token.metadata.as_mut())
         {
-            let picture = if pet.budget < HIBERNATE_BELOW {
+            let asleep = pet.budget < HIBERNATE_BELOW;
+            let picture = if asleep {
                 &art.asleep
             } else {
                 match pet.stage() {
@@ -461,7 +562,14 @@ impl Contract {
                     _ => &art.adult,
                 }
             };
-            metadata.media = Some(picture.clone());
+            let outfit = Self::outfit_of(&token.token_id);
+            metadata.media = Some(if outfit.is_empty() || pet.stage() == "egg" {
+                picture.clone()
+            } else {
+                // The sleeping picture is a child, a little squashed (as design/mochi draws it).
+                let (stage, squash) = if asleep { ("child", Some("0.94 0.88")) } else { (pet.stage(), None) };
+                dressed(picture, stage, squash, &outfit)
+            });
         }
         token
     }
@@ -508,8 +616,49 @@ impl Contract {
             last_fed_at: U64(pet.last_fed_at),
             last_played_at: U64(pet.last_played_at),
             hibernating: pet.budget < HIBERNATE_BELOW,
+            outfit: Self::outfit_of(token_id),
         }
     }
+}
+
+/// Draw an outfit onto a wallet picture: an SVG data URI whose `<`, `>`, `#`, `"` and `%` are
+/// percent-encoded (contract/scripts/art-args.mjs). Items go on the stage's slot anchors, inserted
+/// just before the closing `</svg>`.
+fn dressed(picture: &str, stage: &str, squash: Option<&str>, outfit: &[String]) -> String {
+    let wardrobe = wardrobe();
+    let Some(a) = wardrobe.anchors.get(stage) else { return picture.to_string() };
+    let mut layers = String::new();
+    for item in outfit.iter().filter_map(|id| wardrobe.items.iter().find(|i| &i.id == id)) {
+        let [x, y] = match item.slot.as_str() {
+            "hat" => a.hat,
+            "scarf" => a.scarf,
+            _ => a.item,
+        };
+        layers.push_str(&format!("<g transform='translate({x} {y}) scale({})'>{}</g>", a.scale, item.svg));
+    }
+    if let Some(s) = squash {
+        layers = format!("<g transform='translate(100 176) scale({s}) translate(-100 -176)'>{layers}</g>");
+    }
+    match picture.rfind("%3C/svg%3E") {
+        Some(at) => format!("{}{}{}", &picture[..at], uri_escape(&layers), &picture[at..]),
+        None => picture.to_string(),
+    }
+}
+
+fn uri_escape(s: &str) -> String {
+    let mut out = String::with_capacity(s.len() + s.len() / 4);
+    for c in s.chars() {
+        match c {
+            '%' => out.push_str("%25"),
+            '#' => out.push_str("%23"),
+            '<' => out.push_str("%3C"),
+            '>' => out.push_str("%3E"),
+            '"' => out.push_str("%22"),
+            '\n' => out.push_str("%0A"),
+            c => out.push(c),
+        }
+    }
+    out
 }
 
 /// Log a NEP-297 event so indexers and the app can follow every pet's history.
@@ -664,6 +813,116 @@ mod tests {
         let rest = c.get_pet(id.clone()).unwrap().budget;
         c.charge(id.clone(), rest, "r2".into());
         assert_eq!(media(&c, &id), "art:asleep");
+    }
+
+    /// Charge once so the egg hatches into a baby (growth 1).
+    fn hatch(c: &mut Contract, owner: &AccountId, id: &str) {
+        ctx(owner, ONE_YOCTO, T0);
+        c.set_daily_cap(id.into(), NearToken::from_near(1));
+        ctx(&kitchen(), ZERO, T0);
+        c.charge(id.into(), NearToken::from_millinear(1), "r1".into());
+    }
+
+    #[test]
+    fn free_items_can_be_worn_and_the_pet_pays_their_storage() {
+        let mut c = setup();
+        let id = adopt(&mut c, &accounts(1), NearToken::from_millinear(50)).token_id;
+        hatch(&mut c, &accounts(1), &id);
+        let before = c.get_pet(id.clone()).unwrap().budget;
+
+        ctx(&accounts(1), ZERO, T0);
+        let dressed = c.dress(id.clone(), vec!["rain-hat".into(), "umbrella".into()]);
+        assert_eq!(dressed.outfit, vec!["rain-hat".to_string(), "umbrella".to_string()]);
+        assert!(dressed.budget < before, "storage comes out of the food");
+
+        let undressed = c.dress(id.clone(), vec![]);
+        assert!(undressed.outfit.is_empty());
+        assert_eq!(undressed.budget, before, "taking it all off gives the storage back");
+    }
+
+    #[test]
+    #[should_panic(expected = "party-hat isn't unlocked yet")]
+    fn items_need_their_bond() {
+        let mut c = setup();
+        let id = adopt(&mut c, &accounts(1), NearToken::from_millinear(50)).token_id;
+        hatch(&mut c, &accounts(1), &id);
+        ctx(&accounts(1), ZERO, T0);
+        c.dress(id, vec!["party-hat".into()]);
+    }
+
+    #[test]
+    #[should_panic(expected = "rain-hat isn't unlocked yet")]
+    fn eggs_wear_nothing() {
+        let mut c = setup();
+        let id = adopt(&mut c, &accounts(1), NearToken::from_millinear(50)).token_id;
+        ctx(&accounts(1), ZERO, T0);
+        c.dress(id, vec!["rain-hat".into()]);
+    }
+
+    #[test]
+    #[should_panic(expected = "One item per slot")]
+    fn one_item_per_slot() {
+        let mut c = setup();
+        let id = adopt(&mut c, &accounts(1), NearToken::from_millinear(50)).token_id;
+        hatch(&mut c, &accounts(1), &id);
+        ctx(&accounts(1), ZERO, T0);
+        c.dress(id, vec!["rain-hat".into(), "party-hat".into()]);
+    }
+
+    #[test]
+    #[should_panic(expected = "Only the pet's owner can do that")]
+    fn only_the_owner_dresses_the_pet() {
+        let mut c = setup();
+        let id = adopt(&mut c, &accounts(1), NearToken::from_millinear(50)).token_id;
+        hatch(&mut c, &accounts(1), &id);
+        ctx(&accounts(2), ZERO, T0);
+        c.dress(id, vec!["rain-hat".into()]);
+    }
+
+    #[test]
+    fn bond_unlocks_items_and_the_outfit_goes_with_the_pet() {
+        let mut c = setup();
+        let id = adopt(&mut c, &accounts(1), NearToken::from_millinear(50)).token_id;
+        hatch(&mut c, &accounts(1), &id);
+        for round in 1..=3 {
+            ctx(&accounts(1), ZERO, T0 + round * PLAY_COOLDOWN_NS);
+            c.play(id.clone());
+        }
+        let worn = c.dress(id.clone(), vec!["party-hat".into(), "scarf".into()]);
+        assert_eq!(worn.bond, 3);
+
+        ctx(&accounts(1), ONE_YOCTO, T0 + 4 * PLAY_COOLDOWN_NS);
+        c.nft_transfer(accounts(2), id.clone(), None, None);
+        let pet = c.get_pet(id).unwrap();
+        assert_eq!(pet.owner_id, accounts(2));
+        assert_eq!(pet.outfit, vec!["party-hat".to_string(), "scarf".to_string()]);
+    }
+
+    #[test]
+    fn the_wallet_picture_wears_the_outfit() {
+        ctx(&accounts(0), ZERO, T0);
+        let svg = |s: &str| format!("data:image/svg+xml;charset=utf-8,%3Csvg%3E{s}%3C/svg%3E");
+        let mut c = Contract::new(
+            kitchen(),
+            StageArt {
+                egg: svg("egg"),
+                baby: svg("baby"),
+                child: svg("child"),
+                teen: svg("teen"),
+                adult: svg("adult"),
+                asleep: svg("asleep"),
+                icon: None,
+            },
+        );
+        let id = adopt(&mut c, &accounts(1), NearToken::from_millinear(50)).token_id;
+        hatch(&mut c, &accounts(1), &id);
+        ctx(&accounts(1), ZERO, T0);
+        c.dress(id.clone(), vec!["rain-hat".into()]);
+
+        let picture = media(&c, &id);
+        assert!(picture.starts_with("data:image/svg+xml;charset=utf-8,%3Csvg%3Ebaby%3Cg transform='translate(104 80) scale(0.78)'%3E%3Cpath"));
+        assert!(picture.ends_with("%3C/g%3E%3C/svg%3E"));
+        assert!(!picture.contains('<') && !picture.contains('#'), "the inserted art is percent-encoded");
     }
 
     fn adopt(c: &mut Contract, who: &AccountId, deposit: NearToken) -> PetView {

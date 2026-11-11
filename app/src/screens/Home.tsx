@@ -12,7 +12,7 @@ import { Bubble } from '../components/Bubble';
 import { MoodLine } from '../components/MoodLine';
 import { RunwayMeter } from '../components/RunwayMeter';
 import { ActionTiles } from '../components/ActionTiles';
-import { IconLock, IconShield, RainDrop } from '../components/Icons';
+import { IconHanger, IconLock, IconShield, RainDrop } from '../components/Icons';
 import { ErrorText } from '../components/ui';
 import { Hibernating } from './Hibernating';
 
@@ -102,6 +102,9 @@ export function Home() {
           <MoodLine mood={pet.mood} stage={pet.stage} />
         </div>
         <div className="pet-head__actions">
+          <a className="icon-button icon-button--circle" href="#/wardrobe" aria-label={`${pet.name}'s wardrobe`}>
+            <IconHanger />
+          </a>
           <a className="icon-button icon-button--circle" href="#/diary" aria-label={`${pet.name}'s diary`}>
             <IconLock />
           </a>
@@ -132,7 +135,7 @@ export function Home() {
             ))}
           </div>
         ) : null}
-        <Mochi stage={pet.stage} mood={pet.mood} moment={moment} size={270} name={pet.name} />
+        <Mochi stage={pet.stage} mood={pet.mood} moment={moment} size={270} name={pet.name} outfit={pet.outfit} />
       </div>
 
       <RunwayMeter name={pet.name} days={pet.runwayDays} mood={pet.mood} fromDays={fromDays}>

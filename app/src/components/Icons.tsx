@@ -28,6 +28,13 @@ export const IconBack = (p: IconProps) => (
     <path d="M15 6l-6 6 6 6" />
   </Svg>
 );
+/** A coat hanger: the wardrobe. */
+export const IconHanger = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M12 8.5a2.5 2.5 0 1 1 2.5-2.5" />
+    <path d="M12 8.5v1.5L3.5 16a1.4 1.4 0 0 0 .8 2.5h15.4a1.4 1.4 0 0 0 .8-2.5L12 10" />
+  </Svg>
+);
 export const IconLock = (p: IconProps) => (
   <Svg {...p}>
     <rect x="5" y="11" width="14" height="10" rx="2.5" />

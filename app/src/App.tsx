@@ -1,6 +1,6 @@
 // Routes and guards. Welcome → Recovery → Adopt → Home. From Home: Feed sheet, Play sheet (→ Talk
-// with ?game=), Talk, Diary, Ownership (→ Give, → Recovery). When the pet hibernates, Home shows
-// the Hibernating screen.
+// with ?game=), Talk, Wardrobe, Diary, Ownership (→ Give, → Recovery). When the pet hibernates,
+// Home shows the Hibernating screen.
 // Download (get the app) opens from anywhere, signed in or not.
 import { Component, useEffect, useRef, type ReactNode } from 'react';
 import { useApp } from './state';
@@ -20,8 +20,9 @@ import { Ownership } from './screens/Ownership';
 import { Give } from './screens/Give';
 import { Download } from './screens/Download';
 import { Games } from './screens/Games';
+import { Wardrobe } from './screens/Wardrobe';
 
-const NEEDS_PET = new Set(['/home', '/feed', '/play', '/talk', '/diary', '/ownership', '/give']);
+const NEEDS_PET = new Set(['/home', '/feed', '/play', '/talk', '/wardrobe', '/diary', '/ownership', '/give']);
 
 function Redirect({ to }: { to: string }) {
   useEffect(() => navigate(to, { replace: true }), [to]);
@@ -108,6 +109,7 @@ export function App() {
       path === '/home' ? <HomeRoute />
       : path === '/feed' ? <FeedSheet />
       : path === '/play' ? <Games />
+      : path === '/wardrobe' ? <Wardrobe />
       : path === '/talk' ? <Talk />
       : path === '/diary' ? <Diary />
       : path === '/ownership' ? <Ownership />

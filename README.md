@@ -23,9 +23,10 @@ The free host sleeps after 15 idle minutes. If it was asleep, the first page loa
 | 4 | Tap **Talk** and send "My name is Ada" | Mochi's reply with a tag under it: **Verified** if the NEAR AI signature on the reply checked out, **No proof** otherwise. Under it: "Mochi will remember: Their name is Ada". The kitchen charged Mochi's budget for that reply on chain. |
 | 5 | Tap **Play**, then **Riddles**, and answer | Mochi asks a riddle, gives a hint after a wrong guess, and says whether you solved it. A win shows "You won this round. Bond +1." and calls `play`, which adds a bond point on chain (at most one every 10 minutes). **Guess my thing** and **Would you rather** work the same way; Mochi remembers what you'd rather. |
 | 6 | Tap **Feed**, choose **Shower**, then **Feed 0.1** | The runway grows by about 5 days. Food is the AI budget: 0.1 testnet NEAR moved from your account into Mochi's. |
-| 7 | Tap the lock icon (top right) | Mochi's diary, decrypted in your browser: "Things Mochi knows about you" and recent talks. The chain holds only ciphertext. |
-| 8 | Tap the shield icon (top right) | **What we can and can't do with Mochi**: the contract, the kitchen allowed to charge the budget, the daily cap, and **Change kitchen**. |
-| 9 | Close the app and open it again later | Mochi greets you first and asks about something you told it. Each chat and each game round counts toward growing up; at 20 Mochi becomes a child, with a new look and a new voice. |
+| 7 | Tap the hanger icon (top right) | **Mochi's wardrobe**: 9 items for three slots (hat, scarf, something to hold). The rain hat and umbrella are free. The others unlock as your bond grows from won games, or as Mochi grows up. Try some on, then tap **Wear this**: `dress` saves the outfit with the NFT, and the wallet picture (`nft_token` media) now shows Mochi wearing it. |
+| 8 | Tap the lock icon (top right) | Mochi's diary, decrypted in your browser: "Things Mochi knows about you" and recent talks. The chain holds only ciphertext. |
+| 9 | Tap the shield icon (top right) | **What we can and can't do with Mochi**: the contract, the kitchen allowed to charge the budget, the daily cap, and **Change kitchen**. |
+| 10 | Close the app and open it again later | Mochi greets you first and asks about something you told it. Each chat and each game round counts toward growing up; at 20 Mochi becomes a child, with a new look and a new voice. |
 
 Check step 3 on chain with [NEAR CLI](https://github.com/near/near-cli-rs), using the account name from step 2:
 
@@ -72,6 +73,7 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 |---|---|---|
 | Pet as a token that holds its own budget | NEP-171, NEP-177 and NEP-181 via `near-contract-standards` | `contract/src/lib.rs`: `adopt`, `feed`, `nft_transfer` |
 | Wallet image that follows the pet's stage | NEP-177 `media`, rewritten per stage in `nft_token` and `nft_tokens*` | `contract/src/lib.rs`: `with_art`; images built by `contract/scripts/art-args.mjs` |
+| Outfits earned in play, worn by the NFT | Contract checks each item's unlock rule (bond or stage); the outfit is stored per token, goes with the pet on transfer, and is drawn into the NEP-177 `media` | `contract/src/lib.rs`: `dress`, `dressed`; items, rules and art in `shared/wardrobe.json`, read by the contract (`include_str!`) and the app |
 | Kitchen limited to one pet's owner-chosen budget and daily cap | Contract checks on `predecessor_account_id`; 1 yoctoNEAR confirmation for owner changes | `contract/src/lib.rs`: `charge`, `set_kitchen`, `set_daily_cap` |
 | Charges and changes anyone can audit | NEP-297 events (`EVENT_JSON`, standard `ownling`) | `contract/src/lib.rs`: `emit` |
 | Encrypted diary whose storage the pet pays | Contract storage staking, charged to and refunded from the budget | `contract/src/lib.rs`: `save_diary`, `clear_diary`, `settle_storage` |
@@ -93,8 +95,9 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 
 | Feature | Status |
 |---|---|
-| Contract: adopt, feed, charge with receipt, daily cap, change kitchen, play, diary, hibernation, growth, transfer | Done. 18 unit tests. |
+| Contract: adopt, feed, charge with receipt, daily cap, change kitchen, play, diary, hibernation, growth, transfer | Done. 25 unit tests. |
 | Game loop: intro, Mochi greets first, three games with bond on a win, memory you can see ("Mochi will remember"), growth goal and the growing-up moment | Done. Tested in a browser against testnet, and the mind on live NEAR AI. |
+| Dressing: 9 items, unlocked by bond or stage, saved with the NFT and shown in the wallet picture | Done. 7 contract tests and 4 app tests. The upgraded contract is on testnet, and an outfit was saved and read back from `get_pet` and `nft_token`. |
 | Wallet image by stage | Done |
 | No-wallet sign-up and recovery by phrase | Done. Tested in a browser on the live site. |
 | Encrypted diary | Done. 5 unit tests and a testnet round trip. |
@@ -114,8 +117,8 @@ You need Node 24 or later. For the contract you also need Rust (pinned in `contr
 
 | Do | See |
 |---|---|
-| `cd contract && cargo test` | `18 passed; 0 failed` |
-| `node --test shared/diary.test.ts shared/mind.test.ts` | `pass 11`, `fail 0` (diary encryption, and the mind's modes, parsing and practice games) |
+| `cd contract && cargo test` | `25 passed; 0 failed` |
+| `node --test shared/diary.test.ts shared/mind.test.ts shared/wardrobe.test.ts` | `pass 15`, `fail 0` (diary encryption; the mind's modes, parsing and practice games; the wardrobe's unlock rules and placement) |
 | `cd app && npm ci && npm run demo` | The whole game on http://localhost:5173 with sample data and practice replies: intro, greeting, games, memory, growth. No chain, no keys. Add `?preset=almost-child#/talk` to the address to see Mochi grow up after one message. |
 | `cd contract && cargo near build non-reproducible-wasm` | `target/near/ownling.wasm` |
 

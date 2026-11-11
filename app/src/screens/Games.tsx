@@ -21,7 +21,7 @@ export function Games() {
 
   return (
     <div className="screen screen--backdrop">
-      <Sheet title={`Play with ${pet.name}`} onClose={close} above={<Mochi stage={pet.stage} mood={pet.mood} moment="playing" size={190} name={pet.name} />}>
+      <Sheet title={`Play with ${pet.name}`} onClose={close} above={<Mochi stage={pet.stage} mood={pet.mood} moment="playing" size={190} name={pet.name} outfit={pet.outfit} />}>
         {asleep ? (
           <p className="body-text">
             {pet.name} is hibernating. Feed it first, then you can play.

@@ -1,0 +1,46 @@
+{
+  "anchors": {
+    "baby": { "scale": 0.78, "hat": [104, 80], "scarf": [100, 163.28], "item": [68, 166] },
+    "child": { "scale": 1, "hat": [104, 54], "scarf": [100, 161], "item": [42, 158] },
+    "teen": { "scale": 1.05, "hat": [104, 38], "scarf": [100, 158.3], "item": [32, 154] },
+    "adult": { "scale": 1.12, "hat": [104, 28], "scarf": [100, 156.12], "item": [26, 150] }
+  },
+  "items": [
+    {
+      "id": "rain-hat", "name": "Rain hat", "slot": "hat", "bond": 0, "stage": "baby",
+      "svg": "<path d='M-17 2 C-16 -16 16 -16 17 2 Z' fill='#F2B33D' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><path d='M-27 4 C-18 -1 18 -1 27 4 C26 10 -26 10 -27 4 Z' fill='#F2B33D' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><path d='M-9 -9 C-6 -12 -1 -13 3 -12' fill='none' stroke='#FFFFFF' stroke-width='2.4' stroke-linecap='round' opacity='0.8'/>"
+    },
+    {
+      "id": "umbrella", "name": "Umbrella", "slot": "item", "bond": 0, "stage": "baby",
+      "svg": "<path d='M-4 10 L-4 -30' stroke='#2B3145' stroke-width='2.6' stroke-linecap='round'/><path d='M-4 10 C-4 15 -10 15 -10 10' fill='none' stroke='#2B3145' stroke-width='2.6' stroke-linecap='round'/><path d='M-28 -28 C-26 -48 18 -48 20 -28 C15 -32 9 -32 4 -28 C0 -32 -8 -32 -12 -28 C-17 -32 -23 -32 -28 -28 Z' fill='#6AA6F2' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><path d='M-18 -38 C-14 -42 -8 -43 -3 -42' fill='none' stroke='#FFFFFF' stroke-width='2.2' stroke-linecap='round' opacity='0.8'/>"
+    },
+    {
+      "id": "scarf", "name": "Cozy scarf", "slot": "scarf", "bond": 2, "stage": "baby",
+      "svg": "<path d='M14 4 L18 22 L28 20 L24 4 Z' fill='#E8737F' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><rect x='-34' y='-7' width='68' height='14' rx='7' fill='#E8737F' stroke='#2B3145' stroke-width='2.6'/><path d='M-18 -5 V5 M-6 -5 V5 M6 -5 V5' stroke='#F4A3AE' stroke-width='3' stroke-linecap='round'/>"
+    },
+    {
+      "id": "party-hat", "name": "Party hat", "slot": "hat", "bond": 3, "stage": "baby",
+      "svg": "<path d='M-13 6 L0 -26 L13 6 Z' fill='#8DB4F2' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><path d='M-8 -5 L7 -1 M-4 -15 L5 -12' stroke='#FFFFFF' stroke-width='3' stroke-linecap='round'/><circle cx='0' cy='-27' r='4.5' fill='#F4A3AE' stroke='#2B3145' stroke-width='2.4'/>"
+    },
+    {
+      "id": "balloon", "name": "Balloon", "slot": "item", "bond": 5, "stage": "baby",
+      "svg": "<path d='M0 8 C-6 -6 -2 -18 -12 -32' fill='none' stroke='#2B3145' stroke-width='2' stroke-linecap='round'/><path d='M-14 -32 L-18 -27 L-10 -27 Z' fill='#F4A3AE' stroke='#2B3145' stroke-width='2' stroke-linejoin='round'/><ellipse cx='-14' cy='-46' rx='12' ry='14' fill='#F4A3AE' stroke='#2B3145' stroke-width='2.6'/><ellipse cx='-18' cy='-51' rx='3' ry='4.5' fill='#FFFFFF' opacity='0.8'/>"
+    },
+    {
+      "id": "star-wand", "name": "Star wand", "slot": "item", "bond": 8, "stage": "baby",
+      "svg": "<path d='M2 8 L-10 -22' stroke='#2B3145' stroke-width='3' stroke-linecap='round'/><path transform='translate(-12 -29) scale(1.4)' d='M0 -9 L2.2 -2.2 L9 0 L2.2 2.2 L0 9 L-2.2 2.2 L-9 0 L-2.2 -2.2 Z' fill='#F2B33D' stroke='#2B3145' stroke-width='1.6' stroke-linejoin='round'/>"
+    },
+    {
+      "id": "flower-crown", "name": "Flower crown", "slot": "hat", "bond": 0, "stage": "child",
+      "svg": "<path d='M-24 5 C-12 -1 12 -1 24 5' fill='none' stroke='#1A6B48' stroke-width='3' stroke-linecap='round'/><g transform='translate(-14 2)'><circle cx='0' cy='-5' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='4.8' cy='-1.5' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='3' cy='4' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='-3' cy='4' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='-4.8' cy='-1.5' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle r='2.6' fill='#F2B33D'/></g><g transform='translate(0 -3)'><circle cx='0' cy='-5' r='3.6' fill='#FFFFFF' stroke='#2B3145' stroke-width='1.8'/><circle cx='4.8' cy='-1.5' r='3.6' fill='#FFFFFF' stroke='#2B3145' stroke-width='1.8'/><circle cx='3' cy='4' r='3.6' fill='#FFFFFF' stroke='#2B3145' stroke-width='1.8'/><circle cx='-3' cy='4' r='3.6' fill='#FFFFFF' stroke='#2B3145' stroke-width='1.8'/><circle cx='-4.8' cy='-1.5' r='3.6' fill='#FFFFFF' stroke='#2B3145' stroke-width='1.8'/><circle r='2.6' fill='#F2B33D'/></g><g transform='translate(14 2)'><circle cx='0' cy='-5' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='4.8' cy='-1.5' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='3' cy='4' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='-3' cy='4' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle cx='-4.8' cy='-1.5' r='3.6' fill='#F4A3AE' stroke='#2B3145' stroke-width='1.8'/><circle r='2.6' fill='#F2B33D'/></g>"
+    },
+    {
+      "id": "bow-tie", "name": "Bow tie", "slot": "scarf", "bond": 0, "stage": "teen",
+      "svg": "<path d='M0 0 L-16 -9 L-16 9 Z' fill='#6AA6F2' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><path d='M0 0 L16 -9 L16 9 Z' fill='#6AA6F2' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><rect x='-4.5' y='-5' width='9' height='10' rx='3' fill='#2D63D8' stroke='#2B3145' stroke-width='2.4'/>"
+    },
+    {
+      "id": "crown", "name": "Little crown", "slot": "hat", "bond": 0, "stage": "adult",
+      "svg": "<path d='M-18 6 L-20 -12 L-9 -3 L0 -16 L9 -3 L20 -12 L18 6 Z' fill='#F2B33D' stroke='#2B3145' stroke-width='2.6' stroke-linejoin='round'/><circle cx='0' cy='0' r='2.8' fill='#E8737F' stroke='#2B3145' stroke-width='1.8'/><circle cx='-10' cy='1' r='2' fill='#6AA6F2'/><circle cx='10' cy='1' r='2' fill='#6AA6F2'/>"
+    }
+  ]
+}

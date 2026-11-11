@@ -186,6 +186,23 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .game-card__title { font-size: 16px; font-weight: 800; }
 .game-card__blurb { font-size: 14px; line-height: 1.4; color: var(--ow-dusk); }
 
+/* ---------- Wardrobe ---------- */
+.screen--wardrobe { gap: 16px; }
+.wardrobe-stage { display: flex; justify-content: center; padding: 8px 0 4px; }
+.wardrobe-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.wardrobe-item {
+  min-height: 118px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center;
+  border: 1px solid var(--ow-line); border-radius: 18px; background: var(--ow-paper); color: var(--ow-ink);
+  font-family: var(--ow-font); cursor: pointer;
+}
+.wardrobe-item--on { border: 2px solid var(--ow-rain); background: var(--ow-puddle); }
+.wardrobe-item--locked { cursor: default; }
+.wardrobe-item--locked .wardrobe-item__art { opacity: 0.35; filter: grayscale(1); }
+.wardrobe-item__art { display: block; height: 44px; }
+.wardrobe-item__name { font-size: 14px; font-weight: 800; }
+.wardrobe-item__note { font-size: 12px; line-height: 1.3; color: var(--ow-dusk); }
+.wardrobe-actions { position: sticky; bottom: 0; padding: 8px 0 calc(4px + var(--sa-bottom)); background: var(--ow-mist); }
+
 /* ---------- Talk: games, memory, growth ---------- */
 .game-bar {
   flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;

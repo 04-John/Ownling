@@ -78,7 +78,7 @@ export function Give() {
         <BackButton to="/ownership" />
       </div>
       <div className="give-head">
-        <Mochi stage={pet.stage} mood={pet.mood} moment="gifting" size={120} name={pet.name} />
+        <Mochi stage={pet.stage} mood={pet.mood} moment="gifting" size={120} name={pet.name} outfit={pet.outfit} />
         <div className="stack-4">
           <h1 className="title" tabIndex={-1}>
             Give {pet.name} to someone

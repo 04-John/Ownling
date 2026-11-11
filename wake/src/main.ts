@@ -12,6 +12,7 @@ import { Account, JsonRpcProvider } from 'near-api-js';
 import { signMessage } from 'near-api-js/nep413';
 import { parseSeedPhrase } from 'near-api-js/seed-phrase';
 import { MOCHI_CSS, moodFor, renderMochi, stageFor, type Moment } from '../../design/mochi/mochi';
+import { outfitSvg } from '../../shared/wardrobe';
 import { deriveDiaryKey, diaryKeyMessage, emptyDiary, memoryText, openDiary, remember, sealDiary, type DiaryEntry } from '../../shared/diary';
 import { DEFAULT_MODEL, MAX_HISTORY, MAX_REPLY_TOKENS, parseThought, systemPrompt, type MindPet } from '../../shared/mind';
 
@@ -27,6 +28,7 @@ const MODEL_NAMES: Record<string, string> = { 'z-ai/glm-5.3-flash': 'GLM-5.3 Fla
 
 type PetView = MindPet & {
   token_id: string; owner_id: string; model: string; messages: number; bond: number; hibernating: boolean;
+  outfit?: string[];
 };
 type Turn = { role: 'user' | 'assistant'; content: string };
 
@@ -206,7 +208,7 @@ function moodOf(p: PetView) {
 }
 
 function drawPet(stage: ReturnType<typeof stageFor>, mood: ReturnType<typeof moodFor>, moment: Moment) {
-  $('pet').innerHTML = renderMochi({ stage, mood, moment, size: 300, name: pet?.name ?? 'Mochi' });
+  $('pet').innerHTML = renderMochi({ stage, mood, moment, size: 300, name: pet?.name ?? 'Mochi', dress: outfitSvg(stage, pet?.outfit ?? []) });
 }
 
 function bubble(role: 'user' | 'assistant', text: string) {

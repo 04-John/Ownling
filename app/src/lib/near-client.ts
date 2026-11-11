@@ -34,6 +34,7 @@ type PetView = {
   token_id: string; owner_id: string; name: string; species: string; model: string; stage: string;
   budget: string; daily_cap: string; spent_today: string; kitchen: string;
   messages: number; bond: number; last_played_at: string; hibernating: boolean; has_diary: boolean;
+  outfit?: string[];
 };
 type Saved = { accountId: string; secretKey: string; phrase: string };
 type TalkResponse = {
@@ -118,6 +119,7 @@ export function createNearClient(): OwnlingClient {
       runwayDays: runwayDays(foodNear, dailyCapNear), hibernating: v.hibernating, hasDiary: v.has_diary,
       kitchen: v.kitchen, model: v.model, contractId: config.contractId,
       playReadyAt: readyAt > Date.now() ? readyAt : null,
+      outfit: v.outfit ?? [],
     };
   }
 
@@ -281,6 +283,11 @@ export function createNearClient(): OwnlingClient {
     async play() {
       const pet = await currentPet();
       return toPet(await call<PetView>('play', { token_id: pet.tokenId }));
+    },
+
+    async dress(outfit) {
+      const pet = await currentPet();
+      return toPet(await call<PetView>('dress', { token_id: pet.tokenId, outfit }));
     },
 
     talk: (message, game) => think(message, game ? { kind: 'game', game: game.id, thing: game.thing } : { kind: 'talk' }),

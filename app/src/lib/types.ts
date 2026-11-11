@@ -26,8 +26,10 @@ export type PetState = {
   kitchen: string;
   model: string;
   contractId: string;
-  /** When Play is available again; null when it is now. */
+  /** When the next bond point can be earned; null when it can now. */
   playReadyAt: number | null;
+  /** Wardrobe item ids the pet wears, stored with the NFT (shared/wardrobe.json). */
+  outfit: string[];
 };
 
 export type ProofStatus = 'verified' | 'pending' | 'none';

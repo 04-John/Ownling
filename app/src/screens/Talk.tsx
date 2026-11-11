@@ -5,6 +5,7 @@
 // an egg: the hatching), talking while the reply types in and ~1.5 s after, verified for ~2 s.
 import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react';
 import { GAMES } from '../../../shared/mind';
+import { newlyUnlocked, type Item } from '../../../shared/wardrobe';
 import { useApp, usePet } from '../state';
 import { capitalize, dayLabel, errorText, fmtCountdown, runwayPhrase, sameDay, stageRank } from '../lib/format';
 import { prefersReducedMotion } from '../lib/hooks';
@@ -36,6 +37,7 @@ export function Talk() {
   const [game, setGame] = useState<ActiveGame | null>(null);
   const [roundEnd, setRoundEnd] = useState<{ result: 'win' | 'lose'; bond: string | null } | null>(null);
   const [grewTo, setGrewTo] = useState<Stage | null>(null);
+  const [unlocked, setUnlocked] = useState<Item[]>([]);
   const timers = useRef<number[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -55,24 +57,33 @@ export function Talk() {
     void startRound(askedGame);
   }, [askedGame, pet.hibernating]);
 
-  /** Show a reply as it types in, note growth, and close the round if this reply ended it. */
-  async function showReply(r: TalkResult, stageBefore: Stage) {
+  /** Show a reply as it types in, note growth and new outfits, and close the round if this reply
+   * ended it. `before` is the pet as it was when the message was sent. */
+  async function showReply(r: TalkResult, before: PetState) {
     setPet(r.pet);
     setTurns((t) => [...t, r.reply]);
     setTyping({ turn: r.reply, shown: prefersReducedMotion() ? r.reply.content.length : 0 });
     setHeadMoment('talking');
-    if (stageRank(r.pet.stage) > stageRank(stageBefore)) setGrewTo(r.pet.stage);
-    if (r.result) setRoundEnd({ result: r.result, bond: r.result === 'win' ? await addBond(r.pet) : null });
+    if (stageRank(r.pet.stage) > stageRank(before.stage)) setGrewTo(r.pet.stage);
+    let after = r.pet;
+    if (r.result) {
+      const won = r.result === 'win' ? await addBond(r.pet) : null;
+      if (won) after = won.pet ?? after;
+      setRoundEnd({ result: r.result, bond: won?.note ?? null });
+    }
+    const fresh = newlyUnlocked(before, after);
+    if (fresh.length) setUnlocked(fresh);
   }
 
   /** A won round adds a bond point on chain, at most one every 10 minutes. */
-  async function addBond(now: PetState): Promise<string | null> {
+  async function addBond(now: PetState): Promise<{ note: string; pet?: PetState } | null> {
     if (now.playReadyAt && now.playReadyAt > Date.now()) {
-      return `Your bond grows again in ${fmtCountdown(now.playReadyAt - Date.now())}.`;
+      return { note: `Your bond grows again in ${fmtCountdown(now.playReadyAt - Date.now())}.` };
     }
     try {
-      setPet(await client.play());
-      return 'Bond +1.';
+      const next = await client.play();
+      setPet(next);
+      return { note: 'Bond +1.', pet: next };
     } catch {
       return null;
     }
@@ -82,11 +93,12 @@ export function Talk() {
     setError(null);
     setRoundEnd(null);
     setGrewTo(null);
+    setUnlocked([]);
     setSending({ stage: pet.stage });
     try {
       const r = await client.startGame(id);
       setGame(r.game);
-      await showReply(r, pet.stage);
+      await showReply(r, pet);
     } catch (err) {
       setError(errorText(err));
     } finally {
@@ -134,12 +146,13 @@ export function Talk() {
     setDraft('');
     setError(null);
     setGrewTo(null);
+    setUnlocked([]);
     setSending({ stage: pet.stage });
     setHeadMoment('none');
     setTurns((t) => [...t, mine]);
     try {
       const r = await client.talk(text, playing);
-      await showReply({ ...r, reply: { ...r.reply, proof: r.reply.proof ?? r.proof } }, pet.stage);
+      await showReply({ ...r, reply: { ...r.reply, proof: r.reply.proof ?? r.proof } }, pet);
     } catch (err) {
       setTurns((t) => t.filter((x) => x !== mine));
       setDraft(text);
@@ -157,7 +170,7 @@ export function Talk() {
       <header className="talk-head">
         <BackButton to="/home" variant="plain" />
         <div className="talk-head__avatar">
-          <Mochi stage={pet.stage} mood={pet.mood} moment={headMoment} size={46} name={pet.name} />
+          <Mochi stage={pet.stage} mood={pet.mood} moment={headMoment} size={46} name={pet.name} outfit={pet.outfit} />
         </div>
         <div className="talk-head__text">
           <h1 className="talk-head__name" tabIndex={-1}>
@@ -222,6 +235,12 @@ export function Talk() {
             {grewTo === 'baby' ? `${pet.name} hatched.` : `${pet.name} grew into a ${grewTo}. It looks and talks a little different now.`}
           </p>
         ) : null}
+        {unlocked.length && !typing ? (
+          <p className="talk-notice" role="status">
+            New outfit unlocked: {unlocked.map((i) => i.name).join(', ')}.{' '}
+            <a href="#/wardrobe">Open the wardrobe</a>
+          </p>
+        ) : null}
         {roundEnd && game && !typing ? (
           <div className="round-end" role="status">
             <p className="round-end__title">
@@ -246,6 +265,7 @@ export function Talk() {
               moment={sending.stage === 'egg' ? 'talking' : 'thinking'}
               size={64}
               name={pet.name}
+              outfit={pet.outfit}
             />
             <StatusTag status="pending" />
             <span className="sr-only" role="status">

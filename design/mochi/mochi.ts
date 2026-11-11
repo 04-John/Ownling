@@ -31,6 +31,9 @@ export interface MochiOptions {
   title?: string;
   /** Pet name used in the default accessible name. */
   name?: string;
+  /** Dressing items as SVG markup on the slot anchors (viewBox units), drawn over Mochi inside
+   * its float group so they move with it. Ignored for the egg. See shared/wardrobe.ts. */
+  dress?: string;
 }
 
 export const STAGES: Stage[] = ['egg', 'baby', 'child', 'teen', 'adult'];
@@ -214,6 +217,9 @@ ${!hib && (moment === 'talking' || moment === 'waking') ? `<path data-layer="moc
     if (mouth === 'big') f.push(`<g data-layer="mochi/face/mouth-big"><ellipse cx="0" cy="12" rx="7" ry="6.6" fill="${ink}"/><ellipse cx="0" cy="15.4" rx="4.2" ry="2.4" fill="${K.tongue}"/></g>`);
     out.push(`<g data-layer="mochi/face" transform="translate(${s.fx} ${s.fy}) scale(${fs})">${f.join('')}</g>`);
   }
+
+  // layer: mochi/outfit (dressing items on the slot anchors)
+  if (opts.dress && !egg) out.push(`<g data-layer="mochi/outfit">${opts.dress}</g>`);
 
   // layer: mochi/prop/*
   if (!hib && !egg && moment === 'thinking') {

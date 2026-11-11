@@ -46,7 +46,7 @@ export function Hibernating() {
       </header>
 
       <div className="stage stage--home">
-        <Mochi stage={pet.stage} mood="hibernating" size={270} name={pet.name} />
+        <Mochi stage={pet.stage} mood="hibernating" size={270} name={pet.name} outfit={pet.outfit} />
       </div>
 
       <RunwayMeter name={pet.name} days={pet.runwayDays} mood="hibernating">

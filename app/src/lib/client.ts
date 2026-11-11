@@ -23,6 +23,8 @@ export interface OwnlingClient {
   adopt(name: string, depositNear: number): Promise<PetState>;
   feed(amountNear: number): Promise<PetState>;
   play(): Promise<PetState>;
+  /** Wear these wardrobe items (one per slot, each unlocked); an empty list takes everything off. */
+  dress(outfit: string[]): Promise<PetState>;
 
   /** Send a message, inside a game round when `game` is set; resolves with Mochi's reply, its
    * proof, anything it learned and the pet after the charge. */

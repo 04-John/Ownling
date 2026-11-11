@@ -48,7 +48,7 @@ export function FeedSheet() {
         title={`Feed ${pet.name}`}
         onClose={close}
         busy={busy}
-        above={<Mochi stage={pet.stage} mood={pet.mood} size={210} name={pet.name} />}
+        above={<Mochi stage={pet.stage} mood={pet.mood} size={210} name={pet.name} outfit={pet.outfit} />}
       >
         <fieldset className="portions">
           <legend className="sr-only">Portion</legend>
