@@ -9,7 +9,7 @@ People who spend months talking to an AI companion don't own it. The company tha
 - **Pet contract:** [`pets.ownling.testnet`](https://testnet.nearblocks.io/address/pets.ownling.testnet)
 - **License:** MIT
 
-> **Status on Nov 10, 2026:** the hosted kitchen runs in practice mode until its NEAR AI credits are active. In practice mode, replies are canned and tagged **No proof**, and each costs the pet 0.000001 testnet NEAR. Everything else in the demo is live on testnet.
+> **Status on Nov 11, 2026:** everything in the demo is live on testnet, and Mochi thinks on live NEAR AI. Each reply is signed in NEAR AI's sealed hardware and checked before the pet is charged. For example, [this charge](https://testnet.nearblocks.io/txns/HwXD7M5y49vCMZCBDiCkerQfZRCVs6FKXdic27E8vgCE) took 0.0000209 testnet NEAR from pet #2 for one reply, with the receipt `provider_tee|dc6db8cf…|57bfea1d…`: the signature kind, NEAR AI's completion id and the hash of the signed reply.
 
 ## Try it in 2 minutes (no wallet, no funds, no keys)
 
@@ -101,7 +101,7 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Wallet image by stage | Done |
 | No-wallet sign-up and recovery by phrase | Done. Tested in a browser on the live site. |
 | Encrypted diary | Done. 5 unit tests and a testnet round trip. |
-| Kitchen: owner sessions, cost checks, charging | Done. Tested on testnet in practice mode. |
+| Kitchen: owner sessions, cost checks, charging | Done. Live on NEAR AI since Nov 11. Every charge carries a `provider_tee` receipt. |
 | Kitchen and wake page: NEAR AI replies with signature verification | Done. Run on live NEAR AI on Nov 10 (`kitchen/src/dev-mind.ts`): every reply came back signed by sealed hardware (`provider_tee`) and verified. The greeting, memory and all three games followed their rules. |
 | Wake page: sign-in, pet read, diary decryption | Done. Tested in a browser. |
 | Giving a pet away (Give screen) | The contract side is tested. The screen isn't yet tested end to end. |
@@ -110,6 +110,20 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Windows app (`Ownling-Setup.exe`) | Done. The installed app was tested end to end: sign in by phrase, talk, diary. |
 | Android app (`Ownling.apk`) | Built and signed (Android 7 and later). Not yet tested on a phone. |
 | Installing the website from the browser | Done. It has a web app manifest and an offline-capable service worker. |
+
+## What it costs (measured)
+
+These figures come from the last 10 live charges on testnet, on Nov 11 (model GLM-5.3 Flash). The kitchen prices NEAR at $3.68 and adds a 25% margin.
+
+| | |
+|---|---|
+| One reply | 0.0000165 to 0.0000285 NEAR, about 0.0000207 on average ($0.000076) |
+| What NEAR AI is paid for that reply | About $0.00006 |
+| Most a pet can spend in a day (default cap of 0.02 NEAR) | About 970 replies |
+| Food a new pet starts with (0.49 NEAR) | About 23,700 replies, or 24 days at the full daily cap |
+| Keeping the diary on chain | NEAR's storage price, 0.00001 NEAR per byte, paid once from the pet's food: about 0.004 NEAR for a short diary (about 400 stored bytes). Clearing it returns the food |
+
+Food runs out at 0.0001 NEAR, and then the pet hibernates until someone feeds it. A real chatter uses far less than the cap, so the runway shown in the app ("can think for N more days") is the worst case.
 
 ## Run it yourself
 
