@@ -103,7 +103,7 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Encrypted diary | Done. 5 unit tests and a testnet round trip. |
 | Kitchen: owner sessions, cost checks, charging | Done. Live on NEAR AI since Nov 11. Every charge carries a `provider_tee` receipt. |
 | Kitchen and wake page: NEAR AI replies with signature verification | Done. Run on live NEAR AI on Nov 10 (`kitchen/src/dev-mind.ts`): every reply came back signed by sealed hardware (`provider_tee`) and verified. The greeting, memory and all three games followed their rules. |
-| Wake page: sign-in, pet read, diary decryption | Done. Tested in a browser. |
+| Wake page: sign-in, pet read, diary decryption, talking with no Ownling server | Done. On Nov 11 it was opened from disk with the Ownling app unreachable. Mochi answered from its diary in a verified NEAR AI reply, and the page contacted only NEAR AI, NVIDIA attestation and the public NEAR RPC. |
 | Giving a pet away (Give screen) | The contract side is tested. The screen isn't yet tested end to end. |
 | Contract without full-access keys | Not yet. The key is removed before submission; check it with `near account list-keys pets.ownling.testnet network-config testnet now`. |
 | Daily cap setting in the app | Not built. The contract supports `set_daily_cap`. |
