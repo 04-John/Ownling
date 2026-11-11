@@ -408,7 +408,7 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .money dd.strong { font-weight: 800; }
 
 /* ---------- Talk ---------- */
-.screen--talk { height: 100dvh; min-height: 0; padding: 0; gap: 0; }
+.screen--talk { height: 100dvh; min-height: 0; padding: 0; gap: 0; overflow: hidden; }
 .talk-head {
   flex: none; display: flex; align-items: center; gap: 10px;
   padding: 52px 16px 12px; border-bottom: 1px solid var(--ow-line); background: var(--ow-mist);
@@ -424,6 +424,9 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .talk-log {
   flex: 1; min-height: 0; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px;
   scrollbar-width: thin; scrollbar-color: var(--ow-line) transparent;
+  /* Positioned, so each bubble's hidden screen-reader label stays inside the log instead of
+   * stretching the page; and scrolling past the end stops here instead of moving the page. */
+  position: relative; overscroll-behavior: contain;
 }
 .talk-day { align-self: center; font-size: 12px; font-weight: 700; color: var(--ow-dusk); }
 .talk-empty { margin: auto 24px; text-align: center; font-size: 15px; color: var(--ow-dusk); }
