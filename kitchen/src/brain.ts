@@ -2,7 +2,7 @@
 // signature verified against the attested model before anyone sees it.
 import { createHash } from 'node:crypto';
 import { InferenceClient } from '@nearai/inference-sdk/node';
-import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, systemPrompt, type Mode } from '../../shared/mind.ts';
+import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, settleRound, systemPrompt, type Mode } from '../../shared/mind.ts';
 import { practiceReply } from '../../shared/practice.ts';
 import type { PetView } from './chain.ts';
 import { config } from './config.ts';
@@ -95,7 +95,7 @@ export async function think(
   const hash = createHash('sha256').update(`${signedText}\n${signature}`).digest('hex');
   const usage = completion.usage ?? { prompt_tokens: 0, completion_tokens: 0 };
   return {
-    ...parseThought(completion.choices[0]?.message.content?.trim() ?? ''),
+    ...settleRound(parseThought(completion.choices[0]?.message.content?.trim() ?? ''), mode, message),
     model,
     usage: { prompt_tokens: usage.prompt_tokens, completion_tokens: usage.completion_tokens },
     proof: { id: completion.id, kind: verified.signatureKind, signer, signedText, signature, hash },

@@ -1,7 +1,7 @@
 // Run: node --test shared/mind.test.ts
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseThought, systemPrompt, type MindPet } from './mind.ts';
+import { parseThought, settleRound, systemPrompt, type MindPet } from './mind.ts';
 import { practiceReply } from './practice.ts';
 
 const pet: MindPet & { messages: number } = {
@@ -19,6 +19,13 @@ test('parseThought keeps the reply and takes out what the app keeps', () => {
 test('parseThought handles a plain reply and a result on the same line', () => {
   assert.deepEqual(parseThought('*floats* Hello.'), { reply: '*floats* Hello.', remember: [], result: null });
   assert.equal(parseThought('It was a clock. RESULT: LOSE').reply, 'It was a clock.');
+});
+
+test('giving up ends a game round even when the model forgets the RESULT line', () => {
+  const forgot = parseThought("*puffs* It's a clock. It has hands but never claps.");
+  assert.equal(settleRound(forgot, { kind: 'game', game: 'riddle' }, 'I give up').result, 'lose');
+  assert.equal(settleRound(forgot, { kind: 'game', game: 'riddle' }, 'is it a watch?').result, null);
+  assert.equal(settleRound(forgot, { kind: 'talk' }, 'I give up').result, null);
 });
 
 test('the prompt carries the mode rules, and the guessing game names its thing', () => {

@@ -39,9 +39,9 @@ const MODE_RULES = {
   greet:
     'Your owner just opened the app, so you speak first. Greet them. If you remember something they told you, ask about it or mention it.',
   riddle:
-    'You are playing riddles. If no riddle is in progress, ask one short, fair riddle a child could solve. When your owner answers, say whether they are right, and after a wrong guess give a small hint. When they solve it, end with a line "RESULT: WIN". After their third wrong guess, or if they give up, tell them the answer and end with a line "RESULT: LOSE".',
+    'You are playing riddles. If no riddle is in progress, ask one short, well-known riddle with one clear answer that a child could solve, not one already asked in this conversation. When your owner answers, say whether they are right, and after a wrong guess give a small hint. When they solve it, end with a line "RESULT: WIN". After their third wrong guess, or if they give up, tell them the answer and end with a line "RESULT: LOSE". Whenever you tell them the answer, the round is over and that RESULT line is required.',
   guess: (thing: string) =>
-    `You are playing a guessing game. You are thinking of ${thing}. If the game is just starting, say you are thinking of something and invite yes-or-no questions. Answer each question truthfully with yes, no or sort of, plus a tiny playful hint, and never name the thing. When your owner guesses it, end with a line "RESULT: WIN". If they give up, tell them what it was and end with a line "RESULT: LOSE".`,
+    `You are playing a guessing game. You are thinking of ${thing}. If the game is just starting, say you are thinking of something and invite yes-or-no questions. Answer each question truthfully with yes, no or sort of, plus a tiny playful hint, and never name the thing. When your owner guesses it, end with a line "RESULT: WIN". If they give up, tell them what it was and end with a line "RESULT: LOSE". Whenever you name the thing, the round is over and that RESULT line is required.`,
   rather:
     'You are playing would you rather. If no question is in progress, ask one fun would-you-rather question with two options. When your owner picks, react warmly, say which you would pick, then end with a line "REMEMBER: <what they would rather>" and a line "RESULT: WIN".',
 };
@@ -68,6 +68,18 @@ export function parseThought(raw: string): Thought {
     .replace(/\n{2,}/g, '\n')
     .trim();
   return { reply, remember: remember.filter(Boolean).slice(0, 2), result: result ?? null };
+}
+
+/** The owner ending a round by giving up, in their own words. */
+const GIVE_UP = /\b(i give up|give up|i quit|tell me the answer|what is the answer|what's the answer|i don'?t know)\b/i;
+
+/**
+ * The model sometimes reveals the answer without the RESULT line. In a game, an owner who just
+ * gave up has lost the round either way.
+ */
+export function settleRound(thought: Thought, mode: Mode, message: string | null): Thought {
+  if (mode.kind !== 'game' || thought.result || !message || !GIVE_UP.test(message)) return thought;
+  return { ...thought, result: 'lose' };
 }
 
 /** The user turn that starts a greeting or a game round, which the owner never typed. */
