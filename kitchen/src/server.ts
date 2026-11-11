@@ -40,7 +40,8 @@ const CONTENT_TYPES: Record<string, string> = {
 const MAX_BODY_BYTES = 64 * 1024;
 /** 30 seconds of 16 kHz mono WAV is under 1 MB. */
 const MAX_AUDIO_BYTES = 2 * 1024 * 1024;
-const MAX_CLIPS_PER_HOUR = 60;
+// Voice chat sends a short clip every few seconds while you speak, for the live transcript.
+const MAX_CLIPS_PER_HOUR = 400;
 const HOUR_MS = 60 * 60 * 1000;
 const MAX_MESSAGE = 500;
 const MAX_MEMORY = 4_000;

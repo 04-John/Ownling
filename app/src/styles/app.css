@@ -203,6 +203,16 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .wardrobe-item__note { font-size: 12px; line-height: 1.3; color: var(--ow-dusk); }
 .wardrobe-actions { position: sticky; bottom: 0; padding: 8px 0 calc(4px + var(--sa-bottom)); background: var(--ow-mist); }
 
+/* ---------- Voice chat ---------- */
+.screen--voice { gap: 14px; }
+.talk-head__voice { margin-left: auto; }
+.voice-stage { display: flex; justify-content: center; padding: 6px 0; border-radius: 50%; transition: filter 0.2s ease; }
+.voice-stage--loud { filter: drop-shadow(0 0 18px color-mix(in srgb, var(--ow-rain) 55%, transparent)); }
+.voice-status { margin: 0; text-align: center; font-size: 16px; font-weight: 700; color: var(--ow-dusk); }
+.voice-log { display: flex; flex-direction: column; gap: 10px; min-height: 60px; }
+.voice-settings { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.voice-choice { height: 44px; font-size: 15px; }
+
 /* ---------- Talk: games, memory, growth ---------- */
 .game-bar {
   flex: none; display: flex; align-items: center; justify-content: space-between; gap: 12px;

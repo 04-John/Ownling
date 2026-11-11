@@ -28,6 +28,12 @@ export const IconBack = (p: IconProps) => (
     <path d="M15 6l-6 6 6 6" />
   </Svg>
 );
+/** Sound waves: voice chat. */
+export const IconWaves = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" />
+  </Svg>
+);
 export const IconMic = (p: IconProps) => (
   <Svg {...p}>
     <rect x="9" y="3" width="6" height="11" rx="3" />

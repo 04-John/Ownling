@@ -81,7 +81,7 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Owner sign-in to the kitchen | NEP-413 signed message, replay-protected nonce | `kitchen/src/auth.ts` |
 | Diary key only the owner can rebuild | Deterministic NEP-413 signature, then HKDF, then AES-GCM | `shared/diary.ts` |
 | Private inference with a checkable reply | NEAR AI Cloud: TEE models, end-to-end encryption, response signatures (`@nearai/inference-sdk`) | `kitchen/src/brain.ts`; `wake/src/main.ts` |
-| Talking out loud | NEAR AI Cloud speech to text (`openai/whisper-large-v3`, an attested model) | `app/src/lib/voice.ts` (recorded and converted to 16 kHz WAV in the app); `kitchen/src/brain.ts`: `transcribe`; `kitchen/src/server.ts`: `/listen` |
+| Talking out loud and voice chat | NEAR AI Cloud speech to text (`openai/whisper-large-v3`, an attested model) | `app/src/lib/voice.ts` (recorded, pause detection, converted to 16 kHz WAV in the app); `app/src/lib/speak.ts` (Mochi's voice, on the device); `app/src/screens/VoiceChat.tsx`; `kitchen/src/brain.ts`: `transcribe`; `kitchen/src/server.ts`: `/listen` |
 | A client that needs no Ownling server | Public RPC (`test.rpc.fastnear.com`) and the FastNEAR key lookup | `wake/src/main.ts` |
 
 ### Deployed on testnet
@@ -100,6 +100,7 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Game loop: intro, Mochi greets first, three games with bond on a win, memory you can see ("Mochi will remember"), growth goal and the growing-up moment | Done. Tested in a browser against testnet, and the mind on live NEAR AI. |
 | Dressing: 9 items, unlocked by bond or stage, saved with the NFT and shown in the wallet picture | Done. 7 contract tests and 4 app tests. The upgraded contract is on testnet, and an outfit was saved and read back from `get_pet` and `nft_token`. |
 | Talking out loud (tap the microphone in Talk) | Done. Tested on live NEAR AI in headless Edge with a recorded clip. The words became the message, and Mochi answered with a verified reply that remembered them. The Android app asks for microphone permission the first time. |
+| Voice chat (the waves icon in Talk): hands-free, with a live transcript, sending after a 3 or 5 second pause, and Mochi answering out loud in a voice you pick | Done. Tested on live NEAR AI in headless Edge with a fake microphone. The live transcript appeared while speaking, the pause sent the words, Mochi's verified reply was spoken, and listening resumed. Mochi's voice is the device's own text-to-speech, so it isn't attested. |
 | Wallet image by stage | Done |
 | No-wallet sign-up and recovery by phrase | Done. Tested in a browser on the live site. |
 | Encrypted diary | Done. 5 unit tests and a testnet round trip. |
@@ -161,6 +162,7 @@ Both apps carry their own copy of the game, built with `--mode android` or `--mo
 - **Player key.** The app makes a full-access key for the player's own account and keeps it in the browser's local storage. The 12-word phrase restores it. Anyone with access to that browser profile controls the pet. This is acceptable for a testnet game, but not for real money.
 - **Kitchen key.** It can charge only pets whose owner chose this kitchen, never past the daily cap or the budget. It can't move pets, change their settings or decrypt diaries. Owners can switch kitchens at any time.
 - **What the kitchen sees.** It sees the message text in transit, because it forwards the text to NEAR AI. It logs token counts, not text. Between the kitchen and the model, the chat is end-to-end encrypted to the model's TEE. The wake page removes the kitchen entirely.
+- **Voice chat.** It listens only between turns, never while Mochi thinks or speaks. While you talk, a short clip goes for transcription every few seconds, for the live transcript; the full clip is transcribed at the pause. Mochi's spoken voice is made on your device, so the reply text isn't sent anywhere to be spoken.
 - **Voice clips.** A clip goes from the app to the kitchen, then to NEAR AI's Whisper over TLS. It isn't end-to-end encrypted the way text replies are, because NEAR AI doesn't offer that for audio, and Ownling doesn't check a signature on the transcript. The kitchen doesn't store or log clips. Only the text becomes the message.
 - **Diary.** It's encrypted in the browser with AES-GCM. The key comes from the owner's signature over a fixed message and is never sent anywhere. Only ciphertext and its hash go on chain.
 - **Contract.** It has no admin or upgrade methods. Until its full-access key is deleted (see Feature status), the deployer could still redeploy it.

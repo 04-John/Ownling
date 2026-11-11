@@ -15,7 +15,7 @@ import type { Moment } from '../components/Mochi';
 import { Mochi } from '../components/Mochi';
 import { Bubble, withActions } from '../components/Bubble';
 import { ProofTag, StatusTag, shownStatus } from '../components/ProofTag';
-import { IconMic, IconSend, IconStop } from '../components/Icons';
+import { IconMic, IconSend, IconStop, IconWaves } from '../components/Icons';
 import { canRecord, toWav, useRecorder } from '../lib/voice';
 import { BackButton, Button, ErrorText } from '../components/ui';
 
@@ -210,6 +210,11 @@ export function Talk() {
           </h1>
           <div className="talk-head__sub">{subtitle}</div>
         </div>
+        {pet.hibernating ? null : (
+          <a className="icon-button icon-button--circle talk-head__voice" href="#/voice" aria-label="Voice chat">
+            <IconWaves />
+          </a>
+        )}
       </header>
 
       {game ? (
