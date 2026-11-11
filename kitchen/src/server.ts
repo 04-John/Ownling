@@ -16,7 +16,7 @@ import { createServer, type IncomingMessage, type ServerResponse } from 'node:ht
 import { extname, resolve, sep } from 'node:path';
 import { AuthError, sessionAccount, startSession, type SignIn } from './auth.ts';
 import { GAMES, GUESS_THINGS, type GameId, type Mode } from '../../shared/mind.ts';
-import { PRACTICE_MODE, think, transcribe, warmUp, type Turn } from './brain.ts';
+import { keepWarm, PRACTICE_MODE, think, transcribe, warmUp, type Turn } from './brain.ts';
 import { charge, getPet } from './chain.ts';
 import { config } from './config.ts';
 import { costUsd, modelFor, usdToYocto } from './pricing.ts';
@@ -60,13 +60,47 @@ class HttpError extends Error {
   }
 }
 
-/** Pets currently thinking, so one pet can't run two paid thoughts at once. */
-const thinking = new Set<string>();
+/**
+ * Each pet's latest thought and its charge. A new thought for the same pet waits for the last
+ * charge to land, so the budget check always sees it and a pet never runs two paid thoughts at once.
+ */
+const lastThought = new Map<string, Promise<unknown>>();
+const CHARGE_WAIT_MS = 30_000;
 
 async function talk(req: IncomingMessage, body: unknown) {
   const accountId = sessionAccount(bearer(req));
   const { tokenId, message, history, memory, mode } = parseTalk(body);
 
+  const before = lastThought.get(tokenId) ?? Promise.resolve();
+  let finished!: () => void;
+  const mine = new Promise<void>((resolve) => (finished = resolve));
+  const queue = before.catch(() => undefined).then(() => mine);
+  lastThought.set(tokenId, queue);
+  queue.then(() => {
+    if (lastThought.get(tokenId) === queue) lastThought.delete(tokenId);
+  });
+  try {
+    await Promise.race([before.catch(() => undefined), new Promise((r) => setTimeout(r, CHARGE_WAIT_MS))]);
+    return await thinkAndCharge(accountId, tokenId, message, history, memory, mode, finished);
+  } catch (err) {
+    finished();
+    throw err;
+  }
+}
+
+/**
+ * One paid thought. The reply goes back as soon as its signature has been checked; the charge is
+ * sent right after and lands before this pet's next thought (`finished` runs when it does).
+ */
+async function thinkAndCharge(
+  accountId: string,
+  tokenId: string,
+  message: string | null,
+  history: Turn[],
+  memory: string | undefined,
+  mode: Mode,
+  finished: () => void,
+) {
   const pet = await getPet(tokenId);
   if (!pet) throw new HttpError(404, 'No such pet');
   if (pet.owner_id !== accountId) throw new HttpError(403, 'Only the owner can talk to this pet');
@@ -81,27 +115,24 @@ async function talk(req: IncomingMessage, body: unknown) {
   }
   if (BigInt(pet.budget) < worstCase) throw new HttpError(402, `${pet.name} is too hungry to think. Feed it.`);
 
-  if (thinking.has(tokenId)) throw new HttpError(409, `${pet.name} is still thinking`);
-  thinking.add(tokenId);
-  try {
-    const thought = await think(pet, history, message, memory, mode);
-    const amount = thought.proof ? usdToYocto(await costUsd(thought.model, thought.usage)) : PRACTICE_CHARGE;
-    const budget = await charge(tokenId, amount, thought.receipt);
-    console.log(`${mode.kind} pet=${tokenId} model=${thought.model} tokens=${thought.usage.prompt_tokens}+${thought.usage.completion_tokens} charged=${amount}`);
-    return {
-      reply: thought.reply,
-      remember: thought.remember,
-      result: thought.result,
-      model: thought.model,
-      usage: thought.usage,
-      charged: amount.toString(),
-      budget,
-      verified: thought.proof !== null,
-      proof: thought.proof,
-    };
-  } finally {
-    thinking.delete(tokenId);
-  }
+  const thought = await think(pet, history, message, memory, mode);
+  const amount = thought.proof ? usdToYocto(await costUsd(thought.model, thought.usage)) : PRACTICE_CHARGE;
+  const budget = (BigInt(pet.budget) - amount).toString();
+  charge(tokenId, amount, thought.receipt)
+    .then(() => console.log(`${mode.kind} pet=${tokenId} model=${thought.model} tokens=${thought.usage.prompt_tokens}+${thought.usage.completion_tokens} charged=${amount}`))
+    .catch((err) => console.error(`charge failed pet=${tokenId}: ${(err as Error).message}`))
+    .finally(finished);
+  return {
+    reply: thought.reply,
+    remember: thought.remember,
+    result: thought.result,
+    model: thought.model,
+    usage: thought.usage,
+    charged: amount.toString(),
+    budget,
+    verified: thought.proof !== null,
+    proof: thought.proof,
+  };
 }
 
 function parseTalk(body: unknown): { tokenId: string; message: string | null; history: Turn[]; memory?: string; mode: Mode } {
@@ -275,5 +306,6 @@ server.listen(PORT, () => {
     warmUp()
       .then((ms) => console.log(`NEAR AI connection ready in ${ms} ms`))
       .catch((err) => console.error(`NEAR AI warm-up failed: ${(err as Error).message}`));
+    keepWarm();
   }
 });

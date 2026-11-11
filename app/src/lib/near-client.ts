@@ -40,9 +40,13 @@ type Saved = { accountId: string; secretKey: string; phrase: string };
 type TalkResponse = {
   reply: string; model: string; charged: string; verified: boolean;
   remember?: string[]; result?: 'win' | 'lose' | null;
+  /** The pet's food once this reply's charge lands. */
+  budget?: string;
   proof: { kind: 'provider_tee' | 'gateway'; hash: string; signer: { signingAddress: string } } | null;
 };
 
+/** Below this the pet hibernates (the contract's HIBERNATE_BELOW, 0.0001 NEAR). */
+const HIBERNATE_BELOW = 10n ** 20n;
 const toNear = (yocto: string | bigint) => Number(BigInt(yocto) / 10n ** 18n) / 1e6;
 const toYocto = (near: number) => BigInt(Math.round(near * 1e6)) * 10n ** 18n;
 
@@ -65,6 +69,7 @@ export function createNearClient(): OwnlingClient {
   let turns: ChatTurn[] = [];
   let queue: Promise<unknown> = Promise.resolve();
   let thoughts: Promise<unknown> = Promise.resolve();
+  let known: { view: PetView; at: number } | null = null;
 
   kitchen<{ practiceMode: boolean }>('/health', null, 'GET')
     .then((h) => { config.practiceMode = h.practiceMode; })
@@ -107,6 +112,7 @@ export function createNearClient(): OwnlingClient {
   }
 
   function toPet(v: PetView): PetState {
+    known = { view: v, at: Date.now() };
     const foodNear = toNear(v.budget);
     const dailyCapNear = toNear(v.daily_cap);
     const growthPoints = v.messages + v.bond;
@@ -128,6 +134,12 @@ export function createNearClient(): OwnlingClient {
     const pet = await client.myPet();
     if (!pet) throw new Error('Adopt a pet first');
     return pet;
+  }
+
+  /** The pet as last read or worked out here, if recent; saves a chain read before each message. */
+  async function recentView(maxAgeMs = 60_000): Promise<PetView> {
+    if (!known || Date.now() - known.at > maxAgeMs) await currentPet();
+    return known!.view;
   }
 
   async function sessionToken(): Promise<string> {
@@ -188,7 +200,8 @@ export function createNearClient(): OwnlingClient {
 
   /** One thought through the kitchen. `message` is null when Mochi speaks first (greet, game start). */
   async function thinkNow(message: string | null, mode: Mode): Promise<TalkResult> {
-    const pet = await currentPet();
+    const view = await recentView();
+    const pet = toPet(view);
     if (pet.hibernating) throw new Error(`${pet.name} is hibernating. Feed it to wake it up.`);
     const token = await sessionToken();
     await unlock().catch(() => {});
@@ -215,7 +228,15 @@ export function createNearClient(): OwnlingClient {
     };
     turns.push(reply);
     rememberExchange(message, res.reply, learned).catch(() => {});
-    return { reply, proof, pet: await currentPet(), learned, result: res.result ?? null };
+    // The kitchen replies before its charge lands, so the pet after this reply is worked out here;
+    // the next read from the chain (Home refreshes on open) confirms it.
+    const charged = BigInt(res.charged);
+    const budget = res.budget ?? (BigInt(view.budget) - charged).toString();
+    const next = toPet({
+      ...view, budget, messages: view.messages + 1,
+      spent_today: (BigInt(view.spent_today) + charged).toString(), hibernating: BigInt(budget) < HIBERNATE_BELOW,
+    });
+    return { reply, proof, pet: next, learned, result: res.result ?? null };
   }
 
   async function kitchen<T>(path: string, body: unknown, method = 'POST', bearer?: string): Promise<T> {
@@ -306,7 +327,7 @@ export function createNearClient(): OwnlingClient {
     greet: () => think(null, { kind: 'greet' }),
 
     async listen(clip) {
-      const pet = await currentPet();
+      const pet = toPet(await recentView());
       const token = await sessionToken();
       let res: Response;
       try {

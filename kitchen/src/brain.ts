@@ -54,6 +54,7 @@ const AUDIO_EXT: Record<string, string> = { 'audio/webm': 'webm', 'audio/ogg': '
  */
 export async function transcribe(audio: Buffer, type: string, hint?: string): Promise<string> {
   if (PRACTICE_MODE) return `Hello ${hint ?? 'Mochi'}, how are you today?`;
+  markUsed();
   const base = type.split(';')[0].trim();
   const form = new FormData();
   form.append('model', LISTEN_MODEL);
@@ -84,6 +85,44 @@ export async function warmUp(): Promise<number> {
   return Date.now() - started;
 }
 
+/** Half a second of silence as 16 kHz mono WAV, to keep the speech model warm. */
+function silentWav(): Buffer {
+  const samples = 8_000;
+  const wav = Buffer.alloc(44 + samples * 2);
+  wav.write('RIFF', 0);
+  wav.writeUInt32LE(36 + samples * 2, 4);
+  wav.write('WAVEfmt ', 8);
+  wav.writeUInt32LE(16, 16);
+  wav.writeUInt16LE(1, 20);
+  wav.writeUInt16LE(1, 22);
+  wav.writeUInt32LE(16_000, 24);
+  wav.writeUInt32LE(32_000, 28);
+  wav.writeUInt16LE(2, 32);
+  wav.writeUInt16LE(16, 34);
+  wav.write('data', 36);
+  wav.writeUInt32LE(samples * 2, 40);
+  return wav;
+}
+
+let lastUsed = 0;
+const markUsed = () => {
+  lastUsed = Date.now();
+};
+
+/**
+ * A connection left idle goes cold again, and the next player waits 20 s or more. Every few
+ * minutes without traffic, one tiny chat and half a second of silence keep both models warm (a few
+ * hundredths of a cent a day).
+ */
+export function keepWarm(everyMs = 4 * 60_000): void {
+  setInterval(() => {
+    if (Date.now() - lastUsed < everyMs) return;
+    markUsed();
+    warmUp().catch((err) => console.error(`warm-up failed: ${(err as Error).message}`));
+    transcribe(silentWav(), 'audio/wav').catch(() => undefined);
+  }, everyMs);
+}
+
 /**
  * One thought. `message` is null when Mochi speaks first: a greeting, or the start of a game round.
  * The reply's REMEMBER and RESULT lines are split off (parseThought) after the signature check,
@@ -105,6 +144,7 @@ export async function think(
       receipt: `practice|${pet.token_id}|${Date.now()}`,
     };
   }
+  markUsed();
   const model = await modelFor(pet.model);
   const completion = await client.chat.completions.create({
     model,

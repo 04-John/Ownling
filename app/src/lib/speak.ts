@@ -53,23 +53,44 @@ function webVoices(): Promise<SpeechSynthesisVoice[]> {
   });
 }
 
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 /** English voices on this device, for the voice picker. */
 export async function listVoices(): Promise<Voice[]> {
   if (TARGET === 'android') {
-    const { voices } = await (await plugin()).getSupportedVoices();
-    return voices.map((v, i) => ({ id: String(i), name: v.name, lang: v.lang })).filter((v) => english(v.lang));
+    const tts = await plugin();
+    // Android's speech engine starts in the background, and lists no voices until it's ready.
+    for (let tries = 0; tries < 5; tries++) {
+      const { voices } = await tts.getSupportedVoices().catch(() => ({ voices: [] as SpeechSynthesisVoice[] }));
+      const found = voices.map((v, i) => ({ id: String(i), name: v.name, lang: v.lang })).filter((v) => english(v.lang));
+      if (found.length) return found;
+      await wait(800);
+    }
+    return [];
   }
   return (await webVoices()).filter((v) => english(v.lang)).map((v) => ({ id: v.voiceURI, name: v.name, lang: v.lang }));
 }
 
 export const canSpeak = (): boolean => TARGET === 'android' || typeof speechSynthesis !== 'undefined';
 
-/** Say a reply out loud; resolves when Mochi has finished speaking (or right away if it can't). */
+/** Android only: open the phone's own screen for downloading a speech voice. */
+export const canInstallVoice = (): boolean => TARGET === 'android';
+export async function installVoice(): Promise<void> {
+  await (await plugin()).openInstall();
+}
+
+const NO_VOICE = "This device couldn't speak. It may have no English voice installed yet.";
+
+/** Say a reply out loud; resolves when Mochi has finished speaking. Throws if the device can't speak. */
 export async function speak(reply: string, voiceId: string | null): Promise<void> {
   const text = speakable(reply);
   if (!text) return;
   if (TARGET === 'android') {
-    await (await plugin()).speak({ text, lang: 'en-US', pitch: MOCHI_PITCH, rate: MOCHI_RATE, ...(voiceId ? { voice: Number(voiceId) } : {}) });
+    try {
+      await (await plugin()).speak({ text, lang: 'en-US', pitch: MOCHI_PITCH, rate: MOCHI_RATE, ...(voiceId ? { voice: Number(voiceId) } : {}) });
+    } catch {
+      throw new Error(NO_VOICE);
+    }
     return;
   }
   if (typeof speechSynthesis === 'undefined') return;

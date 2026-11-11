@@ -7,7 +7,9 @@ import { useApp, usePet } from '../state';
 import { navigate } from '../lib/router';
 import { errorText } from '../lib/format';
 import { startListening, toWav, type Listener } from '../lib/voice';
-import { canSpeak, listVoices, loadVoiceSettings, saveVoiceSettings, speak, stopSpeaking, type Voice, type VoiceSettings } from '../lib/speak';
+import {
+  canInstallVoice, canSpeak, installVoice, listVoices, loadVoiceSettings, saveVoiceSettings, speak, stopSpeaking, type Voice, type VoiceSettings,
+} from '../lib/speak';
 import type { ChatTurn } from '../lib/types';
 import type { Moment } from '../components/Mochi';
 import { Mochi } from '../components/Mochi';
@@ -28,7 +30,7 @@ export function VoiceChat() {
   const { client, setPet } = useApp();
   const pet = usePet();
   const [settings, setSettingsState] = useState<VoiceSettings>(loadVoiceSettings);
-  const [voices, setVoices] = useState<Voice[]>([]);
+  const [voices, setVoices] = useState<Voice[] | null>(null);
   const [phase, setPhase] = useState<Phase>('ready');
   const [said, setSaid] = useState('');
   const [reply, setReply] = useState<ChatTurn | null>(null);
@@ -42,7 +44,7 @@ export function VoiceChat() {
 
   useEffect(() => {
     mounted.current = true;
-    listVoices().then(setVoices).catch(() => undefined);
+    listVoices().then(setVoices).catch(() => setVoices([]));
     return () => {
       mounted.current = false;
       listener.current?.stop();
@@ -166,7 +168,7 @@ export function VoiceChat() {
           <span className="field__label">{pet.name}'s voice</span>
           <select className="input" value={settings.voiceId ?? ''} onChange={(e) => setSettings({ voiceId: e.target.value || null })}>
             <option value="">This device's default</option>
-            {voices.map((v) => (
+            {(voices ?? []).map((v) => (
               <option key={v.id} value={v.id}>
                 {v.name}
               </option>
@@ -193,10 +195,30 @@ export function VoiceChat() {
           <button type="button" className="btn btn--secondary voice-choice" aria-pressed={settings.spoken} onClick={() => setSettings({ spoken: !settings.spoken })}>
             {settings.spoken ? `${pet.name} talks back: on` : `${pet.name} talks back: off`}
           </button>
-          <button type="button" className="btn btn--secondary voice-choice" onClick={() => void speak(`Hi, it's ${pet.name}. Is this a good voice?`, settings.voiceId)} disabled={!canSpeak()}>
+          <button
+            type="button"
+            className="btn btn--secondary voice-choice"
+            onClick={() => speak(`Hi, it's ${pet.name}. Is this a good voice?`, settings.voiceId).catch((err) => setError(errorText(err)))}
+            disabled={!canSpeak()}
+          >
             Try the voice
           </button>
         </div>
+        {voices && voices.length === 0 ? (
+          <div className="stack-6">
+            <p className="note">
+              No voice found on this device, so {pet.name} can only write its replies.
+              {canInstallVoice()
+                ? ' Install one: tap below, or install "Speech Services by Google" from the Play Store and choose it under Settings, General management, Text-to-speech.'
+                : ''}
+            </p>
+            {canInstallVoice() ? (
+              <Button variant="secondary" className="voice-choice" onClick={() => installVoice().catch((err) => setError(errorText(err)))}>
+                Install a voice
+              </Button>
+            ) : null}
+          </div>
+        ) : null}
       </section>
 
       <p className="footnote">
