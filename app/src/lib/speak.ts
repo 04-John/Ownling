@@ -51,8 +51,9 @@ export function sentenceEnd(raw: string, from: number): number {
   return -1;
 }
 
-/** Device voices that sound most like a person, by the names their makers give them. */
+/** Voices that sound most like a person, by the names their makers give them. */
 const NATURAL = /natural|neural|enhanced|premium|siri|google/i;
+export const isNatural = (v: { name: string }): boolean => NATURAL.test(v.name);
 /** Lower is better: on the device first, then natural-sounding, the device's own default, US English. */
 const rank = (v: { name: string; lang: string; online: boolean; isDefault: boolean }) =>
   (v.online ? 8 : 0) + (NATURAL.test(v.name) ? 0 : 4) + (v.isDefault ? 0 : 2) + (/^en[-_]US/i.test(v.lang) ? 0 : 1);
@@ -96,6 +97,17 @@ export async function listVoices(): Promise<Voice[]> {
     .map((v) => ({ id: v.voiceURI, name: v.name, lang: v.lang, online: !v.localService }));
 }
 
+/**
+ * A natural voice the browser offers online (Edge has dozens, Chrome has Google's), in the player's
+ * own kind of English if there is one; null if there's none, or the device already has a natural voice.
+ */
+export function naturalOnlineVoice(voices: Voice[]): Voice | null {
+  if (voices.some((v) => !v.online && isNatural(v))) return null;
+  const online = voices.filter((v) => v.online && isNatural(v));
+  const mine = (navigator.languages?.length ? navigator.languages : [navigator.language]).map((l) => l.toLowerCase());
+  return online.find((v) => mine.includes(v.lang.toLowerCase())) ?? online.find((v) => /^en-us$/i.test(v.lang)) ?? online[0] ?? null;
+}
+
 export const canSpeak = (): boolean => TARGET === 'android' || typeof speechSynthesis !== 'undefined';
 
 /** Android only: open the phone's own screen for downloading a speech voice. */
@@ -126,7 +138,8 @@ async function sayOne(text: string, voiceId: string | null): Promise<void> {
   const voice = voices.find((v) => v.voiceURI === voiceId) ?? best ?? null;
   await new Promise<void>((resolve) => {
     const u = new SpeechSynthesisUtterance(text);
-    u.pitch = MOCHI_PITCH;
+    // A natural voice already sounds alive; raising its pitch only spoils it.
+    u.pitch = voice && isNatural(voice) ? 1 : MOCHI_PITCH;
     u.rate = MOCHI_RATE;
     if (voice) u.voice = voice;
     const done = () => {

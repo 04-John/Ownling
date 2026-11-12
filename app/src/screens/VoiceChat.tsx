@@ -8,8 +8,8 @@ import { navigate } from '../lib/router';
 import { errorText } from '../lib/format';
 import { startListening, toWav, type Listener } from '../lib/voice';
 import {
-  canInstallVoice, canSpeak, createSpeech, installVoice, listVoices, loadVoiceSettings, saveVoiceSettings, speak, stopSpeaking,
-  type Speech, type Voice, type VoiceSettings,
+  canInstallVoice, canSpeak, createSpeech, installVoice, isNatural, listVoices, loadVoiceSettings, naturalOnlineVoice, saveVoiceSettings,
+  speak, stopSpeaking, type Speech, type Voice, type VoiceSettings,
 } from '../lib/speak';
 import type { ChatTurn } from '../lib/types';
 import type { Moment } from '../components/Mochi';
@@ -129,6 +129,15 @@ export function VoiceChat() {
     navigate('/talk', { replace: true });
   }
 
+  // Offer a browser's natural online voice when the device has no natural voice and none is chosen.
+  const chosen = voices?.find((v) => v.id === settings.voiceId);
+  const natural = voices && !(chosen && isNatural(chosen)) ? naturalOnlineVoice(voices) : null;
+
+  function chooseNaturalVoice(v: Voice) {
+    setSettings({ voiceId: v.id });
+    speak(`Hi, it's ${pet.name}. Do I sound more like me now?`, v.id).catch((err) => setError(errorText(err)));
+  }
+
   const status =
     phase === 'ready' ? `Tap Start, then just talk. ${pet.name} answers when you pause.`
       : phase === 'listening' ? (loud ? 'Listening…' : `Listening… say something to ${pet.name}`)
@@ -172,11 +181,23 @@ export function VoiceChat() {
         </Button>
       )}
 
+      {natural ? (
+        <section className="card card--small" aria-label="A more natural voice">
+          <p className="note">
+            Want {pet.name} to sound more like a person? This browser has natural voices. They run online, so {pet.name}'s
+            replies go to {/^Microsoft/i.test(natural.name) ? 'Microsoft' : 'Google'} to be spoken.
+          </p>
+          <Button variant="secondary" className="voice-choice" onClick={() => chooseNaturalVoice(natural)}>
+            Use a natural voice
+          </Button>
+        </section>
+      ) : null}
+
       <section className="card voice-settings" aria-label="Voice settings">
         <label className="field">
           <span className="field__label">{pet.name}'s voice</span>
           <select className="input" value={settings.voiceId ?? ''} onChange={(e) => setSettings({ voiceId: e.target.value || null })}>
-            <option value="">The most natural voice on this device</option>
+            <option value="">Best voice on this device</option>
             {(voices ?? []).map((v) => (
               <option key={v.id} value={v.id}>
                 {v.online && !/online/i.test(v.name) ? `${v.name} (online)` : v.name}
