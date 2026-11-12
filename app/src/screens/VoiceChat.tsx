@@ -8,7 +8,8 @@ import { navigate } from '../lib/router';
 import { errorText } from '../lib/format';
 import { startListening, toWav, type Listener } from '../lib/voice';
 import {
-  canInstallVoice, canSpeak, installVoice, listVoices, loadVoiceSettings, saveVoiceSettings, speak, stopSpeaking, type Voice, type VoiceSettings,
+  canInstallVoice, canSpeak, createSpeech, installVoice, listVoices, loadVoiceSettings, saveVoiceSettings, speak, stopSpeaking,
+  type Speech, type Voice, type VoiceSettings,
 } from '../lib/speak';
 import type { ChatTurn } from '../lib/types';
 import type { Moment } from '../components/Mochi';
@@ -37,6 +38,7 @@ export function VoiceChat() {
   const [error, setError] = useState<string | null>(null);
   const [loud, setLoud] = useState(false);
   const listener = useRef<Listener | null>(null);
+  const speech = useRef<Speech | null>(null);
   const partialBusy = useRef(false);
   const mounted = useRef(true);
   const current = useRef(settings);
@@ -48,6 +50,7 @@ export function VoiceChat() {
     return () => {
       mounted.current = false;
       listener.current?.stop();
+      speech.current?.stop();
       stopSpeaking();
     };
   }, []);
@@ -95,18 +98,23 @@ export function VoiceChat() {
       if (text) {
         setSaid(text);
         setPhase('thinking');
-        const r = await client.talk(text, null, (partial) => setReply({ role: 'assistant', content: partial, at: Date.now() }));
+        // Mochi starts speaking its first sentence while the rest of the reply is still arriving.
+        const voice = current.current.spoken && canSpeak() ? createSpeech(current.current.voiceId, () => mounted.current && setPhase('speaking')) : null;
+        speech.current = voice;
+        const r = await client.talk(text, null, (partial) => {
+          setReply({ role: 'assistant', content: partial, at: Date.now() });
+          voice?.add(partial);
+        });
         if (!mounted.current) return;
         setPet(r.pet);
         setReply({ ...r.reply, proof: r.reply.proof ?? r.proof });
-        if (current.current.spoken && canSpeak()) {
-          setPhase('speaking');
-          await speak(r.reply.content, current.current.voiceId);
-        }
+        await voice?.finish(r.reply.content);
       }
     } catch (err) {
+      speech.current?.stop();
       if (mounted.current) setError(errorText(err));
     }
+    speech.current = null;
     if (!mounted.current || !listener.current) return;
     setSaid('');
     setPhase('listening');
@@ -116,6 +124,7 @@ export function VoiceChat() {
   function end() {
     listener.current?.stop();
     listener.current = null;
+    speech.current?.stop();
     stopSpeaking();
     navigate('/talk', { replace: true });
   }
@@ -167,10 +176,10 @@ export function VoiceChat() {
         <label className="field">
           <span className="field__label">{pet.name}'s voice</span>
           <select className="input" value={settings.voiceId ?? ''} onChange={(e) => setSettings({ voiceId: e.target.value || null })}>
-            <option value="">This device's default</option>
+            <option value="">The most natural voice on this device</option>
             {(voices ?? []).map((v) => (
               <option key={v.id} value={v.id}>
-                {v.name}
+                {v.online && !/online/i.test(v.name) ? `${v.name} (online)` : v.name}
               </option>
             ))}
           </select>
@@ -222,8 +231,9 @@ export function VoiceChat() {
       </section>
 
       <p className="footnote">
-        Your voice goes to NEAR AI to become text and isn't kept. {pet.name}'s voice is your device's own, so its replies
-        aren't sent anywhere to be spoken.
+        Your voice goes to NEAR AI to become text and isn't kept. {pet.name} speaks with a voice on your device, so its
+        replies aren't sent anywhere to be spoken, unless you pick an online voice: those send the words to Microsoft or
+        Google.
       </p>
     </main>
   );
