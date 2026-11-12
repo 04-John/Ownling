@@ -17,7 +17,7 @@ import {
 } from '../../../shared/diary';
 import { GUESS_THINGS, type Mode } from '../../../shared/mind';
 import type { OwnlingClient } from './client';
-import type { Account as Player, ActiveGame, AppConfig, ChatTurn, DiaryView, PetState, Proof, TalkResult } from './types';
+import type { Account as Player, ActiveGame, AppConfig, ChatTurn, DiaryView, PetAction, PetState, Proof, TalkResult } from './types';
 
 const env = import.meta.env;
 const RPC_URL: string = env.VITE_RPC_URL ?? 'https://test.rpc.fastnear.com';
@@ -43,6 +43,8 @@ type Saved = { accountId: string; secretKey: string; phrase: string };
 type TalkResponse = {
   reply: string; model: string; charged: string; verified: boolean;
   remember?: string[]; result?: 'win' | 'lose' | null;
+  /** What the owner asked Mochi to open in the app (older kitchens leave it out). */
+  action?: PetAction | null;
   /** The pet's food once this reply's charge lands. */
   budget?: string;
   proof: { kind: 'provider_tee' | 'gateway'; hash: string; signer: { signingAddress: string } } | null;
@@ -228,6 +230,7 @@ export function createNearClient(): OwnlingClient {
     const reply: ChatTurn = {
       role: 'assistant', content: res.reply, at: Date.now(), proof,
       ...(learned.length ? { learned } : {}), ...(res.result ? { result: res.result } : {}),
+      ...(res.action ? { action: res.action } : {}),
     };
     turns.push(reply);
     rememberExchange(message, res.reply, learned).catch(() => {});
@@ -239,7 +242,7 @@ export function createNearClient(): OwnlingClient {
       ...view, budget, messages: view.messages + 1,
       spent_today: (BigInt(view.spent_today) + charged).toString(), hibernating: BigInt(budget) < HIBERNATE_BELOW,
     });
-    return { reply, proof, pet: next, learned, result: res.result ?? null };
+    return { reply, proof, pet: next, learned, result: res.result ?? null, action: res.action ?? null };
   }
 
   /**

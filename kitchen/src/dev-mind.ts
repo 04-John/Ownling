@@ -1,6 +1,6 @@
 // Try Mochi's mind on NEAR AI without the chain: a greeting with memories, a chat that should be
 // remembered, and a round of each game, printing each reply with what parseThought took out.
-// Nothing is charged. Usage: node --env-file=../.env src/dev-mind.ts
+// Nothing is charged. Usage: node --env-file=../.env src/dev-mind.ts [actions]
 import type { Mode } from '../../shared/mind.ts';
 import type { PetView } from './chain.ts';
 import { think, type Turn } from './brain.ts';
@@ -24,7 +24,23 @@ async function round(title: string, mode: Mode, says: (string | null)[], memory?
     console.log(`${said ? `you: ${said}\n` : ''}mochi (${Date.now() - t} ms): ${thought.reply}`);
     if (thought.remember.length) console.log(`  remember: ${thought.remember.join(' | ')}`);
     if (thought.result) console.log(`  result: ${thought.result}`);
+    if (thought.action) console.log(`  action: ${JSON.stringify(thought.action)}`);
   }
+}
+
+// `actions`: only the requests that should (or should not) open something in the app.
+if (process.argv[2] === 'actions') {
+  const talk: Mode = { kind: 'talk' };
+  for (const said of [
+    "Mochi, let's play catch the rain!", 'can I feed you? maybe a big storm', 'how much food do you have left?',
+    'I love pizza', "let's dress you up", 'what do you want to do today?', 'sing me your tune, I will copy it',
+  ]) await round(said, talk, [said]);
+  const hungry = { ...pet, budget: '30000000000000000000000' } as PetView;
+  const was = Object.assign({}, pet);
+  Object.assign(pet, hungry);
+  await round('hungry: offer, then yes', talk, ['hi Mochi, how are you?', 'yes!']);
+  Object.assign(pet, was);
+  process.exit(0);
 }
 
 await round('greet with memories', { kind: 'greet' }, [null], '- Their name is Ada\n- Has a maths exam on Friday\nOwner said: wish me luck');

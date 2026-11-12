@@ -5,7 +5,7 @@
 //   POST /talk     Authorization: Bearer <token>; {tokenId, message, history?, memory?, kind?, game?, thing?}
 //                  kind: talk (default), greet (Mochi speaks first) or game (a round of riddle, guess
 //                  or rather; no message opens the round)
-//                  -> {reply, remember, result, model, usage, charged, budget, proof}
+//                  -> {reply, remember, result, action, model, usage, charged, budget, proof}
 //   POST /talk/stream  the same, streamed as newline-delimited JSON: {type: text, text} pieces as
 //                  Mochi writes, then {type: done, ...} with the checked reply (or {type: error})
 //   POST /listen?name=<pet>  Authorization: Bearer <token>; a voice clip (audio/webm, audio/mp4, ...)
@@ -133,6 +133,7 @@ async function thinkAndCharge(
     reply: thought.reply,
     remember: thought.remember,
     result: thought.result,
+    action: thought.action,
     model: thought.model,
     usage: thought.usage,
     charged: amount.toString(),

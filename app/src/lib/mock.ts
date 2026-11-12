@@ -54,10 +54,11 @@ export function createMockClient(preset?: string | null): OwnlingClient {
     const reply: ChatTurn = {
       role: 'assistant', content: thought.reply, at: Date.now(), proof,
       ...(learned.length ? { learned } : {}), ...(thought.result ? { result: thought.result } : {}),
+      ...(thought.action ? { action: thought.action } : {}),
     };
     turns.push(reply);
     pet = refresh({ ...p, messages: p.messages + 1, foodNear: p.foodNear - cost, spentTodayNear: p.spentTodayNear + cost, hasDiary: true });
-    return { reply, proof, pet, learned, result: thought.result };
+    return { reply, proof, pet, learned, result: thought.result, action: thought.action };
   }
 
   const refresh = (p: PetState): PetState => {
@@ -203,7 +204,14 @@ export function createMockClient(preset?: string | null): OwnlingClient {
     greet: (onText) => think(null, { kind: 'greet' }, onText),
     async listen() {
       await wait(1200);
-      return `Hello ${need().name}, how are you today?`;
+      // Tests can set what the mock hears; otherwise it hears a greeting.
+      let heard: string | null = null;
+      try {
+        heard = localStorage.getItem('ownling.mock.heard');
+      } catch {
+        /* no storage: use the greeting */
+      }
+      return heard || `Hello ${need().name}, how are you today?`;
     },
     async startGame(id, onText) {
       const game: ActiveGame = id === 'guess' ? { id, thing: GUESS_THINGS[Math.floor(Math.random() * GUESS_THINGS.length)] } : { id };

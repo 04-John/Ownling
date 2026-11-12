@@ -1,9 +1,9 @@
 // The shapes the screens work with. The real client fills them from the chain, the kitchen and
 // the diary; the mock client fills them with sample data. Amounts are in NEAR, times in ms.
 import type { Mood, Stage } from '../../../design/mochi/mochi';
-import type { GameId } from '../../../shared/mind';
+import type { GameId, PetAction } from '../../../shared/mind';
 
-export type { GameId, Mood, Stage };
+export type { GameId, Mood, PetAction, Stage };
 
 export type PetState = {
   tokenId: string;
@@ -54,6 +54,8 @@ export type ChatTurn = {
   learned?: string[];
   /** Set on the reply that ended a game round. */
   result?: 'win' | 'lose';
+  /** What the owner asked Mochi to open (food bowl, a game, the wardrobe). */
+  action?: PetAction;
 };
 
 /** A game round in progress. `thing` is the secret in "Guess my thing". */
@@ -66,6 +68,7 @@ export type TalkResult = {
   pet: PetState;
   learned: string[];
   result: 'win' | 'lose' | null;
+  action: PetAction | null;
 };
 
 export type DiaryView = {

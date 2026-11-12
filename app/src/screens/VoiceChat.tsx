@@ -1,10 +1,12 @@
 // Voice chat: talk with Mochi hands-free, like a call. Your words appear as you speak (NEAR AI's
 // Whisper, every few seconds); after a pause of 3 or 5 seconds they're sent; Mochi answers out
 // loud in the device's own voice, then listens again. Replies are checked like typed ones, and
-// each exchange lands in the Talk history and the diary.
+// each exchange lands in the Talk history and the diary. Ask for something ("can I feed you?",
+// "let's play catch the rain") and Mochi opens it once it has answered; feeding still needs a tap.
 import { useEffect, useRef, useState } from 'react';
 import { useApp, usePet } from '../state';
 import { navigate } from '../lib/router';
+import { actionTarget, type ActionTarget } from '../lib/actions';
 import { errorText } from '../lib/format';
 import { startListening, toWav, type Listener } from '../lib/voice';
 import {
@@ -37,6 +39,7 @@ export function VoiceChat() {
   const [reply, setReply] = useState<ChatTurn | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loud, setLoud] = useState(false);
+  const [going, setGoing] = useState<ActionTarget | null>(null);
   const listener = useRef<Listener | null>(null);
   const speech = useRef<Speech | null>(null);
   const partialBusy = useRef(false);
@@ -108,7 +111,17 @@ export function VoiceChat() {
         if (!mounted.current) return;
         setPet(r.pet);
         setReply({ ...r.reply, proof: r.reply.proof ?? r.proof });
-        await voice?.finish(r.reply.content);
+        const target = r.action ? actionTarget(r.action, pet.name) : null;
+        setGoing(target);
+        if (voice) await voice.finish(r.reply.content);
+        else if (target) await new Promise((done) => setTimeout(done, 1800));
+        // You asked for something: once Mochi has said so, it opens. Paying still takes your tap.
+        if (target && mounted.current) {
+          listener.current?.stop();
+          listener.current = null;
+          navigate(target.route);
+          return;
+        }
       }
     } catch (err) {
       speech.current?.stop();
@@ -159,6 +172,9 @@ export function VoiceChat() {
       <p className="voice-status" role="status">
         {status}
       </p>
+      {phase === 'ready' && !pet.hibernating ? (
+        <p className="note center">Try "Let's play catch the rain" or "Can I feed you?"</p>
+      ) : null}
 
       <div className="voice-log" aria-live="polite">
         {said ? <Bubble from="you" text={said} speaker="You" /> : null}
@@ -168,6 +184,7 @@ export function VoiceChat() {
             {reply.proof ? <ProofTag proof={reply.proof} practiceMode={client.config.practiceMode} /> : <StatusTag status="pending" />}
           </div>
         ) : null}
+        {going && phase !== 'hearing' ? <p className="voice-going">{going.going}</p> : null}
       </div>
 
       <ErrorText>{error}</ErrorText>

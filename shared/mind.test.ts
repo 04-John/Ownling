@@ -17,7 +17,7 @@ test('parseThought keeps the reply and takes out what the app keeps', () => {
 });
 
 test('parseThought handles a plain reply and a result on the same line', () => {
-  assert.deepEqual(parseThought('*floats* Hello.'), { reply: '*floats* Hello.', remember: [], result: null });
+  assert.deepEqual(parseThought('*floats* Hello.'), { reply: '*floats* Hello.', remember: [], result: null, action: null });
   assert.equal(parseThought('It was a clock. RESULT: LOSE').reply, 'It was a clock.');
 });
 
@@ -60,6 +60,36 @@ test('practice would-you-rather remembers the choice', () => {
   const t = parseThought(practiceReply(pet, [{ role: 'assistant', content: asked }], 'swim like a fish', { kind: 'game', game: 'rather' }));
   assert.deepEqual(t.remember, ['Would rather swim like a fish']);
   assert.equal(t.result, 'win');
+});
+
+test('a DO line becomes an action and never shows', () => {
+  const play = parseThought('*bounces* Ooh yes, catch the rain.\nDO: PLAY RAIN');
+  assert.equal(play.reply, '*bounces* Ooh yes, catch the rain.');
+  assert.deepEqual(play.action, { kind: 'play', game: 'rain' });
+  assert.deepEqual(parseThought('Yes please.\nDO: FEED STORM').action, { kind: 'feed', portion: 'storm' });
+  assert.deepEqual(parseThought('Yes please. DO: feed').action, { kind: 'feed' });
+  assert.deepEqual(parseThought('Twirl.\nDO: DRESS\nREMEMBER: Likes hats').action, { kind: 'dress' });
+  assert.deepEqual(parseThought('Twirl.\nDO: DRESS\nREMEMBER: Likes hats').remember, ['Likes hats']);
+  assert.equal(parseThought('Hmm.\nDO: PLAY CHESS').action, null, 'a game the app does not have is ignored');
+  assert.equal(parseThought('Hmm.\nDO: PLAY CHESS').reply, 'Hmm.');
+  assert.equal(parseThought('What should we do today?').action, null);
+  const full = '*wiggles* Riddle time.\nDO: PLAY RIDDLE';
+  for (let i = 1; i <= full.length; i++) assert.doesNotMatch(visibleSoFar(full.slice(0, i)), /DO:|\bDO$|PLAY/, `at ${i}`);
+  assert.equal(visibleSoFar('What shall we do next'), 'What shall we do next', 'a finished word "do" in a sentence shows once more arrives');
+});
+
+test('only the app is told about actions, and only in plain chat', () => {
+  assert.match(systemPrompt(pet, undefined, { kind: 'talk' }, true), /DO: FEED/);
+  assert.doesNotMatch(systemPrompt(pet), /DO: /, 'the wake page has no food bowl to open');
+  assert.doesNotMatch(systemPrompt(pet, undefined, { kind: 'game', game: 'riddle' }, true), /DO: /);
+  assert.match(systemPrompt(pet), /food will last about 24 more days/);
+});
+
+test('practice chat opens what you ask for', () => {
+  const talk = { kind: 'talk' } as const;
+  assert.deepEqual(parseThought(practiceReply(pet, [], 'can I feed you a drizzle?', talk)).action, { kind: 'feed', portion: 'drizzle' });
+  assert.deepEqual(parseThought(practiceReply(pet, [], "let's play catch the rain", talk)).action, { kind: 'play', game: 'rain' });
+  assert.equal(parseThought(practiceReply(pet, [], "let's play", talk)).action, null);
 });
 
 test('practice chat remembers a name', () => {

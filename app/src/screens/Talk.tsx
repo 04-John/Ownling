@@ -10,6 +10,7 @@ import { useApp, usePet } from '../state';
 import { capitalize, dayLabel, errorText, fmtCountdown, runwayPhrase, sameDay, stageRank } from '../lib/format';
 import { prefersReducedMotion } from '../lib/hooks';
 import { navigate, useRoute } from '../lib/router';
+import { actionTarget } from '../lib/actions';
 import type { ActiveGame, ChatTurn, GameId, PetState, Stage, TalkResult } from '../lib/types';
 import type { Moment } from '../components/Mochi';
 import { Mochi } from '../components/Mochi';
@@ -274,6 +275,12 @@ export function Talk() {
                           {pet.name} will remember: {fact}
                         </p>
                       ))}
+                      {/* What you asked Mochi for: a button on its latest reply that opens it. */}
+                      {t.action && i === turns.length - 1 && !sending && !game ? (
+                        <Button variant="secondary" className="talk-action" onClick={() => navigate(actionTarget(t.action!, pet.name).route, { replace: true })}>
+                          {actionTarget(t.action, pet.name).label}
+                        </Button>
+                      ) : null}
                     </>
                   )}
                 </div>

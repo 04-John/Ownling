@@ -27,6 +27,31 @@ const RATHER: [string, string][] = [
 
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
+const PRACTICE_GAMES: [RegExp, string, string][] = [
+  [/\b(rain|catch)\b/, 'RAIN', 'Catch the rain'],
+  [/\b(tune|song|sing)\b/, 'TUNE', 'my tune game'],
+  [/\becho\b/, 'ECHO', 'Echo'],
+  [/\briddles?\b/, 'RIDDLE', 'riddles'],
+  [/\bguess\b/, 'GUESS', 'the guessing game'],
+  [/\brather\b/, 'RATHER', 'would you rather'],
+];
+
+/** Requests the real mind answers with a DO line, so the mock can open the same screens. */
+function practiceAction(said: string): string | null {
+  if (/\b(feed|food|snack|eat)\b/.test(said)) {
+    const size = /\b(drizzle|shower|storm)\b/.exec(said)?.[1];
+    return `*bounces* Yes please. I'll open my bowl.\nDO: FEED${size ? ` ${size.toUpperCase()}` : ''}`;
+  }
+  if (/\b(dress|outfit|wear)\b/.test(said)) return "*twirls* Ooh, dress-up. Let's open the wardrobe.\nDO: DRESS";
+  if (/\b(play|game)\b/.test(said)) {
+    const game = PRACTICE_GAMES.find(([re]) => re.test(said));
+    return game
+      ? `*bounces* Yes, let's play ${game[2]}.\nDO: PLAY ${game[1]}`
+      : '*wiggles* Ooh, what shall we play? Riddles, catch the rain, or my tune game?';
+  }
+  return null;
+}
+
 export function practiceReply(pet: { messages: number }, history: Turn[], message: string | null, mode: Mode): string {
   const said = (message ?? '').toLowerCase();
   const mochiTurns = history.filter((t) => t.role === 'assistant').map((t) => t.content);
@@ -71,6 +96,8 @@ export function practiceReply(pet: { messages: number }, history: Turn[], messag
   const line = CHAT[(pet.messages + history.length) % CHAT.length];
   const name = /\bmy name is ([a-z][a-z'-]{1,20})/i.exec(message ?? '')?.[1];
   if (name) return `*bounces* ${capitalize(name)}. What a nice name.\nREMEMBER: Their name is ${capitalize(name)}`;
+  const asked = practiceAction(said);
+  if (asked) return asked;
   const likes = /\bi (?:really )?(?:love|like) ([^.,!?]{2,40})/i.exec(message ?? '')?.[1];
   if (likes) return `${line}\nREMEMBER: They like ${likes.trim()}`;
   return line;

@@ -2,7 +2,7 @@
 // signature verified against the attested model before anyone sees it.
 import { createHash } from 'node:crypto';
 import { InferenceClient } from '@nearai/inference-sdk/node';
-import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, settleRound, systemPrompt, visibleSoFar, type Mode } from '../../shared/mind.ts';
+import { MAX_HISTORY, MAX_REPLY_TOKENS, openingLine, parseThought, settleRound, systemPrompt, visibleSoFar, type Mode, type PetAction } from '../../shared/mind.ts';
 import { practiceReply } from '../../shared/practice.ts';
 import { fixName } from '../../shared/speech.ts';
 import type { PetView } from './chain.ts';
@@ -27,6 +27,8 @@ export type Thought = {
   remember: string[];
   /** Set when this reply ended a game round. */
   result: 'win' | 'lose' | null;
+  /** What the owner asked Mochi to open in the app. Part of the signed text, like REMEMBER. */
+  action: PetAction | null;
   model: string;
   usage: { prompt_tokens: number; completion_tokens: number };
   /** Null in practice mode: nothing was verified. */
@@ -154,7 +156,7 @@ export async function think(
   markUsed();
   const model = await modelFor(pet.model);
   const messages = [
-    { role: 'system' as const, content: systemPrompt(pet, memory, mode) },
+    { role: 'system' as const, content: systemPrompt(pet, memory, mode, true) },
     ...history.slice(-MAX_HISTORY),
     { role: 'user' as const, content: message ?? openingLine(mode) ?? '' },
   ];

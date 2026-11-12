@@ -3,7 +3,7 @@
 // account holds; portions it can't pay for (food plus the network fee held back) are greyed out.
 import { useEffect, useState } from 'react';
 import { useApp, usePet } from '../state';
-import { navigate } from '../lib/router';
+import { navigate, useRoute } from '../lib/router';
 import { atLeastDays, errorText, fmtNear, portionDays } from '../lib/format';
 import { FEED_FEE_NEAR } from '../lib/client';
 import { Mochi } from '../components/Mochi';
@@ -26,7 +26,9 @@ const fmtBalance = (n: number) => (Math.floor(n * 1000) / 1000).toFixed(3).repla
 export function FeedSheet() {
   const { client, account, setPet, setCelebration } = useApp();
   const pet = usePet();
-  const [choice, setChoice] = useState<PortionId>('shower');
+  // Asking Mochi for "a storm" opens the sheet as #/feed?portion=storm.
+  const asked = PORTIONS.find((p) => p.id === useRoute().query.get('portion'));
+  const [choice, setChoice] = useState<PortionId>(asked?.id ?? 'shower');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [balance, setBalance] = useState<number | null>(null);
@@ -42,8 +44,12 @@ export function FeedSheet() {
       .then((b) => {
         if (!live) return;
         setBalance(b);
-        // Start on the biggest portion up to Shower that the account can pay for.
-        if (b != null && 0.1 + FEED_FEE_NEAR > b && 0.02 + FEED_FEE_NEAR <= b) setChoice('drizzle');
+        if (b == null) return;
+        const fits = (near: number) => near + FEED_FEE_NEAR <= b;
+        // Keep the portion asked for if the account can pay for it; otherwise start on the biggest
+        // portion up to Shower that it can.
+        if (asked && fits(asked.near)) return;
+        setChoice(!fits(0.1) && fits(0.02) ? 'drizzle' : 'shower');
       })
       .catch(() => undefined);
     return () => {
