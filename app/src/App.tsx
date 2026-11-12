@@ -1,6 +1,6 @@
 // Routes and guards. Welcome → Recovery → Adopt → Home. From Home: Feed sheet, Play sheet (→ Talk
-// with ?game=), Talk (→ Voice chat), Wardrobe, Diary, Ownership (→ Give, → Recovery). When the pet
-// hibernates, Home shows the Hibernating screen.
+// with ?game=, → the quick games Rain and Tune, → Echo), Talk (→ Voice chat), Wardrobe, Diary,
+// Ownership (→ Give, → Recovery). When the pet hibernates, Home shows the Hibernating screen.
 // Download (get the app) opens from anywhere, signed in or not.
 import { Component, useEffect, useRef, type ReactNode } from 'react';
 import { useApp } from './state';
@@ -22,8 +22,11 @@ import { Download } from './screens/Download';
 import { Games } from './screens/Games';
 import { Wardrobe } from './screens/Wardrobe';
 import { VoiceChat } from './screens/VoiceChat';
+import { Echo } from './screens/Echo';
+import { RainGame } from './screens/RainGame';
+import { TuneGame } from './screens/TuneGame';
 
-const NEEDS_PET = new Set(['/home', '/feed', '/play', '/talk', '/voice', '/wardrobe', '/diary', '/ownership', '/give']);
+const NEEDS_PET = new Set(['/home', '/feed', '/play', '/talk', '/voice', '/echo', '/rain', '/tune', '/wardrobe', '/diary', '/ownership', '/give']);
 
 function Redirect({ to }: { to: string }) {
   useEffect(() => navigate(to, { replace: true }), [to]);
@@ -112,6 +115,9 @@ export function App() {
       : path === '/play' ? <Games />
       : path === '/wardrobe' ? <Wardrobe />
       : path === '/voice' ? <VoiceChat />
+      : path === '/echo' ? <Echo />
+      : path === '/rain' ? <RainGame />
+      : path === '/tune' ? <TuneGame />
       : path === '/talk' ? <Talk />
       : path === '/diary' ? <Diary />
       : path === '/ownership' ? <Ownership />

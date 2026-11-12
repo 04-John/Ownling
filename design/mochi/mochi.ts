@@ -17,7 +17,9 @@ export type Stage = 'egg' | 'baby' | 'child' | 'teen' | 'adult';
 export type Mood = 'content' | 'peckish' | 'hungry' | 'hibernating';
 export type Moment =
   | 'none' | 'thinking' | 'talking' | 'eating' | 'playing'
-  | 'resting' | 'verified' | 'waking' | 'gifting';
+  | 'resting' | 'verified' | 'waking' | 'gifting'
+  // Touch reactions: tickled, stroked or hugged, poked too often, poked far too often.
+  | 'giggling' | 'loved' | 'dizzy' | 'grumpy';
 
 export interface MochiOptions {
   stage: Stage;
@@ -38,7 +40,7 @@ export interface MochiOptions {
 
 export const STAGES: Stage[] = ['egg', 'baby', 'child', 'teen', 'adult'];
 export const MOODS: Mood[] = ['content', 'peckish', 'hungry', 'hibernating'];
-export const MOMENTS: Moment[] = ['none', 'thinking', 'talking', 'eating', 'playing', 'resting', 'verified', 'waking', 'gifting'];
+export const MOMENTS: Moment[] = ['none', 'thinking', 'talking', 'eating', 'playing', 'resting', 'verified', 'waking', 'gifting', 'giggling', 'loved', 'dizzy', 'grumpy'];
 
 /** Growth points = messages answered + times played (handbook). */
 export function stageFor(growthPoints: number): Stage {
@@ -73,7 +75,17 @@ export const MOCHI_CSS = `
 .mochi-dot1{animation:ownlingMochiDot 1.2s ease-in-out infinite}
 .mochi-dot2{animation:ownlingMochiDot 1.2s ease-in-out .2s infinite}
 .mochi-dot3{animation:ownlingMochiDot 1.2s ease-in-out .4s infinite}
-@media (prefers-reduced-motion: reduce){.mochi-float,.mochi-bounce,.mochi-dot1,.mochi-dot2,.mochi-dot3{animation:none}}
+@keyframes ownlingMochiWiggle{0%,100%{transform:rotate(0)}20%{transform:rotate(-7deg)}40%{transform:rotate(6deg)}60%{transform:rotate(-4deg)}80%{transform:rotate(3deg)}}
+@keyframes ownlingMochiSway{0%,100%{transform:rotate(0)}25%{transform:translateX(-4px) rotate(-5deg)}75%{transform:translateX(4px) rotate(5deg)}}
+@keyframes ownlingMochiShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+@keyframes ownlingMochiRise{0%{transform:translateY(8px);opacity:0}15%{opacity:1}75%{opacity:1}100%{transform:translateY(-20px);opacity:0}}
+.mochi-wiggle{animation:ownlingMochiWiggle .6s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.mochi-sway{animation:ownlingMochiSway 1.2s ease-in-out infinite;transform-box:fill-box;transform-origin:50% 100%}
+.mochi-shake{animation:ownlingMochiShake .25s linear infinite}
+.mochi-rise1{animation:ownlingMochiRise 1.6s ease-out infinite both}
+.mochi-rise2{animation:ownlingMochiRise 1.6s ease-out .5s infinite both}
+.mochi-rise3{animation:ownlingMochiRise 1.6s ease-out 1s infinite both}
+@media (prefers-reduced-motion: reduce){.mochi-float,.mochi-bounce,.mochi-dot1,.mochi-dot2,.mochi-dot3,.mochi-wiggle,.mochi-sway,.mochi-shake,.mochi-rise1,.mochi-rise2,.mochi-rise3{animation:none}}
 `;
 
 /** Named swatches used inside the art (same in light and dark themes). */
@@ -111,8 +123,8 @@ export const STAGE_GEOMETRY: Record<Stage, StageGeo> = {
   adult: { c: [C(100, 122, 52), C(54, 134, 32), C(146, 134, 32), C(66, 94, 32), C(104, 70, 38), C(140, 90, 32), C(100, 148, 28)], top: 32, left: 22, right: 178, fx: 100, fy: 120, fs: 1.12, sh: 72 },
 };
 
-type Eyes = 'open' | 'side' | 'up' | 'wide' | 'happy' | 'sleepy' | 'asleep';
-type Mouth = 'smile' | 'open' | 'o' | 'wobble' | 'big' | 'none';
+type Eyes = 'open' | 'side' | 'up' | 'wide' | 'happy' | 'sleepy' | 'asleep' | 'squeeze' | 'dizzy' | 'grumpy';
+type Mouth = 'smile' | 'open' | 'o' | 'wobble' | 'big' | 'frown' | 'none';
 
 const MOMENT_FACE: Partial<Record<Moment, [Eyes, Mouth]>> = {
   thinking: ['up', 'o'],
@@ -123,10 +135,15 @@ const MOMENT_FACE: Partial<Record<Moment, [Eyes, Mouth]>> = {
   verified: ['open', 'smile'],
   waking: ['wide', 'o'],
   gifting: ['happy', 'smile'],
+  giggling: ['squeeze', 'big'],
+  loved: ['happy', 'smile'],
+  dizzy: ['dizzy', 'wobble'],
+  grumpy: ['grumpy', 'frown'],
 };
 
 const DROP = 'M0 -14 C7 -5 10 1 10 6 A10 10 0 0 1 -10 6 C-10 1 -7 -5 0 -14 Z';
 const STAR = 'M0 -9 L2.2 -2.2 L9 0 L2.2 2.2 L0 9 L-2.2 2.2 L-9 0 L-2.2 -2.2 Z';
+const HEART = 'M0 6 C-10 -2 -9 -11 -3.5 -11 C-1.5 -11 0 -9.5 0 -8 C0 -9.5 1.5 -11 3.5 -11 C9 -11 10 -2 0 6 Z';
 const r2 = (n: number) => Math.round(n * 100) / 100;
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
 
@@ -160,6 +177,9 @@ export function renderMochi(opts: MochiOptions): string {
   let motion = 'mochi-float';
   if (hib || mood === 'hungry' || moment === 'eating' || moment === 'resting') motion = '';
   if (moment === 'playing' && !hib && !egg) motion = 'mochi-bounce';
+  if (!hib && moment === 'giggling') motion = 'mochi-wiggle';
+  if (!hib && moment === 'dizzy') motion = 'mochi-sway';
+  if (!hib && moment === 'grumpy') motion = 'mochi-shake';
 
   const outline = hib ? K.outlineSleep : K.outline;
   const ink = hib ? K.inkSleep : K.outline;
@@ -209,11 +229,18 @@ ${!hib && (moment === 'talking' || moment === 'waking') ? `<path data-layer="moc
     }
     if (eyes === 'happy') f.push(`<path data-layer="mochi/face/eyes-happy" d="M-23 -2 Q-16 -11 -9 -2 M9 -2 Q16 -11 23 -2" fill="none" stroke="${ink}" stroke-width="3.4" stroke-linecap="round"/>`);
     if (eyes === 'sleepy') f.push(`<g data-layer="mochi/face/eyes-sleepy"><path d="M-23 -3 A7 6 0 0 0 -9 -3 Z" fill="${ink}"/><path d="M9 -3 A7 6 0 0 0 23 -3 Z" fill="${ink}"/><path d="M-25 -3 L-7 -3 M7 -3 L25 -3" stroke="${ink}" stroke-width="3" stroke-linecap="round"/></g>`);
+    if (eyes === 'squeeze') f.push(`<path data-layer="mochi/face/eyes-squeeze" d="M-22 -10 L-11 -4 L-22 2 M22 -10 L11 -4 L22 2" fill="none" stroke="${ink}" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>`);
+    if (eyes === 'dizzy') {
+      const spiral = (cx: number) => `M${cx} -4 a1.5 1.5 0 0 1 3 0 a3 3 0 0 1 -6 0 a4.5 4.5 0 0 1 9 0 a6 6 0 0 1 -12 0`;
+      f.push(`<path data-layer="mochi/face/eyes-dizzy" d="${spiral(-17)} ${spiral(15)}" fill="none" stroke="${ink}" stroke-width="2.4" stroke-linecap="round"/>`);
+    }
+    if (eyes === 'grumpy') f.push(`<g data-layer="mochi/face/eyes-grumpy"><ellipse cx="-16" cy="-3" rx="5" ry="5.6" fill="${ink}"/><ellipse cx="16" cy="-3" rx="5" ry="5.6" fill="${ink}"/><path d="M-25 -15 L-9 -10 M25 -15 L9 -10" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/></g>`);
     if (eyes === 'asleep') f.push(`<path data-layer="mochi/face/eyes-asleep" d="M-23 -4 Q-16 3 -9 -4 M9 -4 Q16 3 23 -4" fill="none" stroke="${ink}" stroke-width="3" stroke-linecap="round"/>`);
     if (mouth === 'smile') f.push(`<path data-layer="mochi/face/mouth-smile" d="M-6 9 Q0 15 6 9" fill="none" stroke="${ink}" stroke-width="2.8" stroke-linecap="round"/>`);
     if (mouth === 'open') f.push(`<g data-layer="mochi/face/mouth-open"><ellipse cx="0" cy="11" rx="5" ry="4.6" fill="${ink}"/><ellipse cx="0" cy="13.2" rx="3" ry="1.8" fill="${K.tongue}"/></g>`);
     if (mouth === 'o') f.push(`<circle data-layer="mochi/face/mouth-o" cx="0" cy="11" r="2.7" fill="${ink}"/>`);
     if (mouth === 'wobble') f.push(`<path data-layer="mochi/face/mouth-wobble" d="M-7 12 Q-3.5 8.5 0 12 Q3.5 15.5 7 12" fill="none" stroke="${ink}" stroke-width="2.6" stroke-linecap="round"/>`);
+    if (mouth === 'frown') f.push(`<path data-layer="mochi/face/mouth-frown" d="M-6 14 Q0 8 6 14" fill="none" stroke="${ink}" stroke-width="2.8" stroke-linecap="round"/>`);
     if (mouth === 'big') f.push(`<g data-layer="mochi/face/mouth-big"><ellipse cx="0" cy="12" rx="7" ry="6.6" fill="${ink}"/><ellipse cx="0" cy="15.4" rx="4.2" ry="2.4" fill="${K.tongue}"/></g>`);
     out.push(`<g data-layer="mochi/face" transform="translate(${s.fx} ${s.fy}) scale(${fs})">${f.join('')}</g>`);
   }
@@ -244,6 +271,19 @@ ${!hib && (moment === 'talking' || moment === 'waking') ? `<path data-layer="moc
   }
   if (!egg && moment === 'gifting') {
     out.push(`<g data-layer="mochi/prop/bow" transform="translate(${s.fx + 20} ${s.top + 6})"><path d="M0 0 C-6 -12 -22 -12 -20 -2 C-19 6 -8 6 0 0 Z" fill="${K.blush}" stroke="${K.outline}" stroke-width="2.6" stroke-linejoin="round"/><path d="M0 0 C6 -12 22 -12 20 -2 C19 6 8 6 0 0 Z" fill="${K.blush}" stroke="${K.outline}" stroke-width="2.6" stroke-linejoin="round"/><circle r="4.5" fill="${K.tongue}" stroke="${K.outline}" stroke-width="2.4"/></g>`);
+  }
+  if (!hib && moment === 'loved') {
+    const heart = (x: number, y: number, k: number, n: number) => `<g transform="translate(${r2(x)} ${r2(y)}) scale(${k})"><path class="mochi-rise${n}" d="${HEART}" fill="${K.tongue}" stroke="${K.outline}" stroke-width="${r2(2.2 / k)}" stroke-linejoin="round"/></g>`;
+    out.push(`<g data-layer="mochi/prop/hearts">${heart(s.fx - 36, s.top - 12, 1.35, 1)}${heart(s.fx + 32, s.top - 18, 1.1, 2)}${heart(s.fx - 2, s.top - 30, 0.9, 3)}</g>`);
+  }
+  if (!hib && moment === 'dizzy') {
+    const star = (x: number, y: number, k: number, n: number) => `<path class="mochi-dot${n}" transform="translate(${r2(x)} ${r2(y)}) scale(${k})" d="${STAR}" fill="${K.sparkle}" stroke="${K.outline}" stroke-width="${r2(1.8 / k)}" stroke-linejoin="round"/>`;
+    out.push(`<g data-layer="mochi/prop/dizzy-stars">${star(s.fx - 34, s.top + 4, 0.7, 1)}${star(s.fx + 2, s.top - 12, 0.8, 2)}${star(s.fx + 36, s.top + 2, 0.65, 3)}</g>`);
+  }
+  if (!hib && moment === 'grumpy') {
+    const x = Math.min(s.right - 10, 160);
+    const y = s.top - 8;
+    out.push(`<g data-layer="mochi/prop/storm" transform="translate(${x} ${y})"><path d="M-3 8 L-8 18 L-2 18 L-6 28" fill="none" stroke="${K.sparkle}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><circle cx="-10" cy="2" r="8" fill="${K.inkSleep}" stroke="${K.outline}" stroke-width="2.4"/><circle cx="6" cy="2" r="9" fill="${K.inkSleep}" stroke="${K.outline}" stroke-width="2.4"/><circle cx="-2" cy="-5" r="9" fill="${K.inkSleep}" stroke="${K.outline}" stroke-width="2.4"/><circle cx="-10" cy="2" r="6.8" fill="${K.inkSleep}"/><circle cx="6" cy="2" r="7.8" fill="${K.inkSleep}"/></g>`);
   }
   if (opts.slots && !egg) {
     const t = (x: number, y: number, txt: string, anchor = 'middle') => `<text x="${r2(x)}" y="${r2(y)}" text-anchor="${anchor}" font-size="10" font-weight="700" fill="${K.slot}" font-family="JetBrains Mono, monospace">${txt}</text>`;

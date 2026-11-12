@@ -41,4 +41,6 @@
     <!-- Talk out loud: the microphone records a short clip that NEAR AI turns into text. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- A short buzz when you touch Mochi or catch soot in a game. No prompt: it's a normal permission. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 </manifest>

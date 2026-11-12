@@ -20,13 +20,15 @@ The free host sleeps after 15 idle minutes. If it was asleep, the first page loa
 | 1 | Open https://ownling.onrender.com and tap **Next** twice | Three short steps: Mochi is an AI friend that remembers you, every thought costs a little food, and Mochi is yours, not ours. Then **Create my account**. |
 | 2 | Tap **Create my account** | A 12-word recovery phrase. Behind it, the sponsor account `ownling.testnet` created a named account `cloud-NNNNN.ownling.testnet` for you, holding 1 testnet NEAR. The key exists only in your browser. |
 | 3 | Tap **I saved it**, then **Adopt Mochi** | Home. `adopt` minted Mochi as an NFT and put the deposit, minus storage, into its food budget (0.49 testnet NEAR, "Mochi can think for 24 more days"). Mochi speaks first: the egg hatches with its first words. Under its name: "19 more chats or games until Mochi is a child". |
-| 4 | Tap **Talk** and send "My name is Ada", or tap the microphone and say it | Mochi's reply with a tag under it: **Verified** if the NEAR AI signature on the reply checked out, **No proof** otherwise. Under it: "Mochi will remember: Their name is Ada". The kitchen charged Mochi's budget for that reply on chain. |
-| 5 | Tap **Play**, then **Riddles**, and answer | Mochi asks a riddle, gives a hint after a wrong guess, and says whether you solved it. A win shows "You won this round. Bond +1." and calls `play`, which adds a bond point on chain (at most one every 10 minutes). **Guess my thing** and **Would you rather** work the same way; Mochi remembers what you'd rather. |
-| 6 | Tap **Feed**, choose **Shower**, then **Feed 0.1** | The runway grows by about 5 days. Food is the AI budget: 0.1 testnet NEAR moved from your account into Mochi's. |
-| 7 | Tap the hanger icon (top right) | **Mochi's wardrobe**: 9 items for three slots (hat, scarf, something to hold). The rain hat and umbrella are free. The others unlock as your bond grows from won games, or as Mochi grows up. Try some on, then tap **Wear this**: `dress` saves the outfit with the NFT, and the wallet picture (`nft_token` media) now shows Mochi wearing it. |
-| 8 | Tap the lock icon (top right) | Mochi's diary, decrypted in your browser: "Things Mochi knows about you" and recent talks. The chain holds only ciphertext. |
-| 9 | Tap the shield icon (top right) | **What we can and can't do with Mochi**: the contract, the kitchen allowed to charge the budget, the daily cap, and **Change kitchen**. |
-| 10 | Close the app and open it again later | Mochi greets you first and asks about something you told it. Each chat and each game round counts toward growing up; at 20 Mochi becomes a child, with a new look and a new voice. |
+| 4 | Tap Mochi's head, tickle its tummy, stroke it, or hold your finger on it | Mochi reacts: hearts for a pat or a hug, a giggle for a tickle, a happy rumble when stroked. Poke it fast and it gets dizzy; keep going and it sulks under a tiny storm cloud. This runs on the device: no AI, no food. |
+| 5 | Tap **Talk** and send "My name is Ada", or tap the microphone and say it | Mochi's reply with a tag under it: **Verified** if the NEAR AI signature on the reply checked out, **No proof** otherwise. Under it: "Mochi will remember: Their name is Ada". The kitchen charged Mochi's budget for that reply on chain. |
+| 6 | Tap **Play** | Three quick games that use no food and run on the device: **Catch the rain** (move Mochi to catch drops for 30 seconds; gold drops are worth 3, soot costs 2), **Mochi's tune** (Mochi sings a tune on four clouds and you repeat it; it grows a note each round) and **Echo** (say anything and Mochi says it back in a squeaky, thunder or canyon voice). Best scores stay on the device. |
+| 7 | Tap **Play**, then **Riddles**, and answer | Mochi asks a riddle, gives a hint after a wrong guess, and says whether you solved it. A win shows "You won this round. Bond +1." and calls `play`, which adds a bond point on chain (at most one every 10 minutes). **Guess my thing** and **Would you rather** work the same way; Mochi remembers what you'd rather. |
+| 8 | Tap **Feed**, choose **Shower**, then **Feed 0.1** | The runway grows by about 5 days. Food is the AI budget: 0.1 testnet NEAR moved from your account into Mochi's. |
+| 9 | Tap the hanger icon (top right) | **Mochi's wardrobe**: 9 items for three slots (hat, scarf, something to hold). The rain hat and umbrella are free. The others unlock as your bond grows from won games, or as Mochi grows up. Try some on, then tap **Wear this**: `dress` saves the outfit with the NFT, and the wallet picture (`nft_token` media) now shows Mochi wearing it. |
+| 10 | Tap the lock icon (top right) | Mochi's diary, decrypted in your browser: "Things Mochi knows about you" and recent talks. The chain holds only ciphertext. |
+| 11 | Tap the shield icon (top right) | **What we can and can't do with Mochi**: the contract, the kitchen allowed to charge the budget, the daily cap, and **Change kitchen**. |
+| 12 | Close the app and open it again later | Mochi greets you first and asks about something you told it. Each chat and each game round counts toward growing up; at 20 Mochi becomes a child, with a new look and a new voice. |
 
 Check step 3 on chain with [NEAR CLI](https://github.com/near/near-cli-rs), using the account name from step 2:
 
@@ -101,6 +103,8 @@ Kitchen (kitchen/) ──end-to-end encrypted chat──▶ NEAR AI Cloud (TEE m
 | Dressing: 9 items, unlocked by bond or stage, saved with the NFT and shown in the wallet picture | Done. 7 contract tests and 4 app tests. The upgraded contract is on testnet, and an outfit was saved and read back from `get_pet` and `nft_token`. |
 | Talking out loud (tap the microphone in Talk) | Done. Tested on live NEAR AI in headless Edge with a recorded clip. The words became the message, and Mochi answered with a verified reply that remembered them. The Android app asks for microphone permission the first time. |
 | Voice chat (the waves icon in Talk): hands-free, with a live transcript, sending after a 3 or 5 second pause, and Mochi answering out loud in a voice you pick | Done. Tested on live NEAR AI in headless Edge with a fake microphone. The live transcript appeared while speaking, the pause sent the words, Mochi's verified reply was spoken sentence by sentence (the first one while the rest was still arriving), and listening resumed. Mochi's voice is the device's own text-to-speech, so it isn't attested. |
+| Touching Mochi on Home: pat, tickle, stroke and hug, each with its own face, line and sound; dizzy, then grumpy, if poked too much | Done. Tested in headless Edge with the mouse and the keyboard (Enter pats, T tickles, H hugs). |
+| Quick games: Catch the rain, Mochi's tune and Echo | Done. Tested in headless Edge: a full 30-second rain round, four tune rounds ended by a wrong note, and Echo playing a fake-microphone clip back at 1.6x speed, then listening again. They use no AI and no food, and Echo's recording never leaves the device. |
 | Wallet image by stage | Done |
 | No-wallet sign-up and recovery by phrase | Done. Tested in a browser on the live site. |
 | Encrypted diary | Done. 5 unit tests and a testnet round trip. |
@@ -135,7 +139,7 @@ You need Node 24 or later. For the contract you also need Rust (pinned in `contr
 | Do | See |
 |---|---|
 | `cd contract && cargo test` | `25 passed; 0 failed` |
-| `node --test shared/diary.test.ts shared/mind.test.ts shared/wardrobe.test.ts shared/speech.test.ts` | `pass 18`, `fail 0` (diary encryption; the mind's modes, parsing and practice games; the wardrobe's unlock rules and placement; speech clean-up) |
+| `node --test shared/diary.test.ts shared/mind.test.ts shared/wardrobe.test.ts shared/speech.test.ts` | `pass 19`, `fail 0` (diary encryption; the mind's modes, parsing and practice games; the wardrobe's unlock rules and placement; speech clean-up) |
 | `cd app && npm ci && npm run demo` | The whole game on http://localhost:5173 with sample data and practice replies: intro, greeting, games, memory, growth. No chain, no keys. Add `?preset=almost-child#/talk` to the address to see Mochi grow up after one message. |
 | `cd contract && cargo near build non-reproducible-wasm` | `target/near/ownling.wasm` |
 
@@ -163,6 +167,7 @@ Both apps carry their own copy of the game, built with `--mode android` or `--mo
 - **Kitchen key.** It can charge only pets whose owner chose this kitchen, never past the daily cap or the budget. It can't move pets, change their settings or decrypt diaries. Owners can switch kitchens at any time.
 - **What the kitchen sees.** It sees the message text in transit, because it forwards the text to NEAR AI. It logs token counts, not text. Between the kitchen and the model, the chat is end-to-end encrypted to the model's TEE. The wake page removes the kitchen entirely.
 - **Voice chat.** It listens only between turns, never while Mochi thinks or speaks. While you talk, a short clip goes for transcription every few seconds, for the live transcript; the full clip is transcribed at the pause. Mochi speaks each sentence as soon as it arrives, with the most natural voice on your device, so the reply text isn't sent anywhere to be spoken. The voice picker also lists a browser's online voices, marked as online; choosing one sends the reply text to Microsoft or Google to be spoken.
+- **Echo.** Its recording is played back on the device and then dropped. It isn't sent to the kitchen, NEAR AI or anyone else.
 - **Voice clips.** A clip goes from the app to the kitchen, then to NEAR AI's Whisper over TLS. It isn't end-to-end encrypted the way text replies are, because NEAR AI doesn't offer that for audio, and Ownling doesn't check a signature on the transcript. The kitchen doesn't store or log clips. Only the text becomes the message.
 - **Diary.** It's encrypted in the browser with AES-GCM. The key comes from the owner's signature over a fixed message and is never sent anywhere. Only ciphertext and its hash go on chain.
 - **Contract.** It has no admin or upgrade methods. Until its full-access key is deleted (see Feature status), the deployer could still redeploy it.
@@ -198,5 +203,5 @@ Both apps carry their own copy of the game, built with `--mode android` or `--mo
 
 ### Tracks
 
-- **games:** the loop is talk, feed, play, grow and hibernate, and the food is the pet's real AI budget. Players never see a wallet, a pop-up or a gas prompt.
+- **games:** the loop is talk, feed, play, grow and hibernate, and the food is the pet's real AI budget. Mochi reacts to touch, and three quick games sit beside the three AI games. Players never see a wallet, a pop-up or a gas prompt.
 - **nfts:** each pet is a NEP-171 token that holds its own NEAR, pays for its own thinking, and changes its wallet image as it grows.

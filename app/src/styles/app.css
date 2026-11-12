@@ -185,6 +185,49 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .game-card:hover { border-color: var(--ow-rain); }
 .game-card__title { font-size: 16px; font-weight: 800; }
 .game-card__blurb { font-size: 14px; line-height: 1.4; color: var(--ow-dusk); }
+.games-head { margin: 0; font-size: 15px; font-weight: 900; }
+
+/* ---------- Touching Mochi (Home) ---------- */
+.pet-touch { border-radius: 50%; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+.pet-touch:focus-visible { outline-offset: -12px; }
+.pet-hint {
+  position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); margin: 0; padding: 4px 12px; white-space: nowrap;
+  border-radius: var(--ow-radius-pill); background: var(--ow-paper); border: 1px solid var(--ow-line);
+  font-size: 13px; font-weight: 700; color: var(--ow-dusk); pointer-events: none;
+}
+
+/* ---------- Quick games ---------- */
+.screen--arcade { gap: 12px; }
+.arcade-stats { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; font-weight: 700; color: var(--ow-dusk); }
+.arcade-stats b { color: var(--ow-ink); font-size: 17px; }
+.rain-field {
+  position: relative; flex: 1; min-height: 360px; overflow: hidden;
+  border: 1px solid var(--ow-line); border-radius: var(--ow-radius-card);
+  background: linear-gradient(180deg, var(--ow-puddle), var(--ow-paper));
+}
+.rain-canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+.arcade-card {
+  position: absolute; inset: 16px; margin: auto; height: fit-content; padding: 18px 16px;
+  display: flex; flex-direction: column; align-items: center; gap: 12px;
+  border: 1px solid var(--ow-line); border-radius: 22px; background: var(--ow-paper);
+}
+.arcade-card__title { margin: 0; font-size: 20px; font-weight: 900; }
+.tune-stage { display: flex; justify-content: center; }
+.tune-pads { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tune-pad {
+  height: 104px; display: flex; align-items: center; justify-content: center;
+  border: 2px solid var(--ow-line); border-radius: 36px; cursor: pointer;
+  background: var(--ow-paper); color: var(--pad); transition: transform 0.08s ease, background 0.08s ease;
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+}
+.tune-pad[aria-disabled="true"] { cursor: default; }
+.tune-pad--rain { --pad: #6AA6F2; }
+.tune-pad--sun { --pad: #F2B33D; }
+.tune-pad--heart { --pad: #E8737F; }
+.tune-pad--leaf { --pad: #3E9B6B; }
+.tune-pad--lit { background: var(--pad); color: #FFFFFF; border-color: var(--pad); transform: scale(0.96); }
+.three-up { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+@media (prefers-reduced-motion: reduce) { .tune-pad { transition: none; } .tune-pad--lit { transform: none; } }
 
 /* ---------- Wardrobe ---------- */
 .screen--wardrobe { gap: 16px; }

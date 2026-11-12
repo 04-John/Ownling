@@ -1,10 +1,12 @@
 // 03 Home (or 06 Hibernating when the pet sleeps). Mochi 270 px, its greeting or last line in a
 // bubble (tap to reply), progress to the next stage, runway meter, Feed / Play / Talk. Plays
-// thinking, talking, eating, growing and waking moments.
+// thinking, talking, eating, growing and waking moments. Touch Mochi to pat, tickle, stroke or hug
+// it (lib/petting.ts).
 import { useEffect, useMemo, useState } from 'react';
 import { useApp, usePet } from '../state';
 import { errorText, fmtNear, growthProgress } from '../lib/format';
 import { prefersReducedMotion, useMomentSequence } from '../lib/hooks';
+import { usePetting } from '../lib/petting';
 import type { Moment } from '../components/Mochi';
 import type { PetState, Stage } from '../lib/types';
 import { Mochi } from '../components/Mochi';
@@ -46,6 +48,7 @@ export function Home() {
   const [fromDays, setFromDays] = useState<number | null | undefined>(undefined);
   const [greeting, setGreeting] = useState<'waiting' | string | null>(null);
   const [grewTo, setGrewTo] = useState<Stage | null>(null);
+  const touch = usePetting(pet);
 
   // Refresh on open: the kitchen may have charged Mochi since we last looked.
   useEffect(() => {
@@ -82,7 +85,7 @@ export function Home() {
     setCelebration(null);
   }, [celebration, run, setCelebration]);
 
-  const moment: Moment = step?.moment ?? (greeting === 'waiting' ? 'thinking' : 'none');
+  const moment: Moment = touch.reaction?.moment ?? step?.moment ?? (greeting === 'waiting' ? 'thinking' : 'none');
 
   const lastReply = useMemo(() => {
     if (greeting && greeting !== 'waiting') return greeting;
@@ -91,6 +94,7 @@ export function Home() {
     return null;
   }, [client, greeting]);
   const growth = growthProgress(pet.growthPoints, pet.name);
+  const line = touch.reaction?.line ?? lineFor(pet, moment, lastReply, grewTo);
 
   return (
     <main className="screen screen--home">
@@ -121,8 +125,8 @@ export function Home() {
         <span className="growth__text">{growth.text}</span>
       </div>
 
-      <a className="bubble-link" href="#/talk" aria-live="polite" aria-label={`${pet.name} says: ${lineFor(pet, moment, lastReply, grewTo)}. Reply`}>
-        <Bubble from="mochi" text={lineFor(pet, moment, lastReply, grewTo)} speaker={pet.name} className="bubble--home" />
+      <a className="bubble-link" href="#/talk" aria-live="polite" aria-label={`${pet.name} says: ${line}. Reply`}>
+        <Bubble from="mochi" text={line} speaker={pet.name} className="bubble--home" />
       </a>
 
       <div className="stage stage--home">
@@ -135,7 +139,14 @@ export function Home() {
             ))}
           </div>
         ) : null}
-        <Mochi stage={pet.stage} mood={pet.mood} moment={moment} size={270} name={pet.name} outfit={pet.outfit} />
+        <div className="pet-touch" role="button" tabIndex={0} aria-label={`Pet ${pet.name}. Enter pats, T tickles, H hugs.`} {...touch.handlers}>
+          <Mochi stage={pet.stage} mood={pet.mood} moment={moment} size={270} name={pet.name} outfit={pet.outfit} />
+        </div>
+        {touch.hint ? (
+          <p className="pet-hint" aria-hidden="true">
+            Tap, stroke or hold {pet.name}
+          </p>
+        ) : null}
       </div>
 
       <RunwayMeter name={pet.name} days={pet.runwayDays} mood={pet.mood} fromDays={fromDays}>
