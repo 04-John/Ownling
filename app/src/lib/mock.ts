@@ -4,7 +4,7 @@ import { moodFor, runwayDays, stageFor } from '../../../design/mochi/mochi';
 import { GUESS_THINGS, parseThought, type Mode } from '../../../shared/mind';
 import { practiceReply } from '../../../shared/practice';
 import { isUnlocked, itemById } from '../../../shared/wardrobe';
-import type { OwnlingClient } from './client';
+import { FEED_FEE_NEAR, type OwnlingClient } from './client';
 import type { Account, ActiveGame, ChatTurn, DiaryView, PetState, Proof, TalkResult } from './types';
 
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -17,7 +17,7 @@ const PHRASE = 'river cloud gentle orbit maple quiet lantern drift echo velvet h
 /** Dev-only starting states for reviewing screens by URL: ?preset=<name>#/route (mock mode only). */
 export const MOCK_PRESETS = [
   'account', 'home-egg', 'home-baby', 'almost-child', 'home-child', 'home-teen', 'home-adult',
-  'peckish', 'hungry', 'hibernating', 'resting', 'chat', 'chat-practice', 'diary', 'diary-locked', 'wallet',
+  'peckish', 'hungry', 'hibernating', 'resting', 'chat', 'chat-practice', 'diary', 'diary-locked', 'wallet', 'broke',
 ] as const;
 
 export function createMockClient(preset?: string | null): OwnlingClient {
@@ -25,6 +25,8 @@ export function createMockClient(preset?: string | null): OwnlingClient {
   let pet: PetState | null = null;
   let diaryLocked = true;
   let lastPlayed = 0;
+  /** The player's own testnet NEAR, after adopting. */
+  let wallet = 0.47;
   const turns: ChatTurn[] = [];
   // Dev presets may seed these; the defaults are what the mock always used.
   let practiceMode = true;
@@ -108,6 +110,7 @@ export function createMockClient(preset?: string | null): OwnlingClient {
       case 'peckish': pet = seedPet(30, 4, 0.1); break;
       case 'hungry': pet = seedPet(30, 4, 0.03); break;
       case 'hibernating': pet = seedPet(30, 4, 0); break;
+      case 'broke': wallet = 0.018; pet = seedPet(30, 4); break;
       case 'resting': lastPlayed = Date.now() - 2_000; pet = seedPet(30, 4); break;
       case 'chat': practiceMode = false; turns.push(...chat(verified)); pet = seedPet(30, 4); break;
       case 'chat-practice': turns.push(...chat(() => ({ status: 'none', model: 'practice', costNear: 0.000001 }))); pet = seedPet(30, 4); break;
@@ -173,7 +176,12 @@ export function createMockClient(preset?: string | null): OwnlingClient {
     async feed(amountNear) {
       await wait(1000);
       const p = need();
+      if (amountNear + FEED_FEE_NEAR > wallet) throw new Error(`Your account has ${wallet.toFixed(3)} testnet NEAR, and this needs ${(amountNear + FEED_FEE_NEAR).toFixed(3)}: the amount plus a little held for the network fee, most of which comes back.`);
+      wallet -= amountNear + 0.0005;
       return (pet = refresh({ ...p, foodNear: p.foodNear + amountNear }));
+    },
+    async balance() {
+      return account ? wallet : null;
     },
     async play() {
       await wait(700);

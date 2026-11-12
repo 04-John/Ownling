@@ -25,6 +25,9 @@ const KEY_LOOKUP_URL: string = env.VITE_KEY_LOOKUP_URL ?? 'https://test.api.fast
 const STORAGE_KEY = 'ownling.account.v1';
 const PLAY_COOLDOWN_MS = 10 * 60 * 1000;
 const GAS = 100_000_000_000_000n;
+/** Feeding only adds to the budget, which burns a few Tgas. NEAR holds back about 0.1 NEAR per
+ * 100 Tgas attached until the call ends, so attaching less lets a smaller balance feed. */
+const FEED_GAS = 30_000_000_000_000n;
 const ONE_YOCTO = 1n;
 const PERSONA = 'A shy, curious cloud creature who loves rain and remembers small kindnesses.';
 const MODEL = 'z-ai/glm-5.3-flash';
@@ -97,9 +100,9 @@ export function createNearClient(): OwnlingClient {
   }
 
   /** Transactions go one at a time, so two never fight over the key's nonce. */
-  function call<T>(methodName: string, args: Record<string, unknown>, deposit = 0n): Promise<T> {
+  function call<T>(methodName: string, args: Record<string, unknown>, deposit = 0n, gas = GAS): Promise<T> {
     const run = queue.then(() =>
-      need().callFunction({ contractId: config.contractId, methodName, args, deposit, gas: GAS }),
+      need().callFunction({ contractId: config.contractId, methodName, args, deposit, gas }),
     );
     queue = run.catch(() => {});
     return run.then((r) => r as T).catch((err) => { throw friendly(err); });
@@ -353,8 +356,16 @@ export function createNearClient(): OwnlingClient {
 
     async feed(amountNear) {
       const pet = await currentPet();
-      await call('feed', { token_id: pet.tokenId }, toYocto(amountNear));
+      await call('feed', { token_id: pet.tokenId }, toYocto(amountNear), FEED_GAS);
       return currentPet();
+    },
+
+    async balance() {
+      if (!saved) return null;
+      const a = await provider.viewAccount({ accountId: saved.accountId });
+      // Storage costs 10^19 yoctoNEAR a byte, and that part can't be spent.
+      const free = a.amount - BigInt(a.storage_usage) * 10n ** 19n;
+      return free > 0n ? toNear(free) : 0;
     },
 
     async play() {
@@ -461,7 +472,13 @@ function friendly(err: unknown): Error {
   const text = err instanceof Error ? err.message : String(err);
   const panic = /panicked(?: at)?:?\s*(.+?)(?:"|$)/i.exec(text)?.[1] ?? /Smart contract panicked: (.+)/.exec(text)?.[1];
   if (panic) return new Error(panic.replace(/\\n.*/, '').trim());
-  if (/NotEnoughBalance|LackBalanceForState/.test(text)) return new Error('This account is out of test NEAR');
+  const lack = /Not enough balance for \S+ \(balance: (\d+), cost: (\d+)\)/.exec(text);
+  if (lack) {
+    const has = (Math.floor(toNear(lack[1]) * 1000) / 1000).toFixed(3);
+    const needs = (Math.ceil(toNear(lack[2]) * 1000) / 1000).toFixed(3);
+    return new Error(`Your account has ${has} testnet NEAR, and this needs ${needs}: the amount plus a little held for the network fee, most of which comes back.`);
+  }
+  if (/NotEnoughBalance|Not enough balance|LackBalanceForState/i.test(text)) return new Error('Your account is out of testnet NEAR');
   return new Error(text.length > 160 ? 'The transaction failed; try again' : text);
 }
 

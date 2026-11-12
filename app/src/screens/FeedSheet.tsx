@@ -1,9 +1,11 @@
 // 05 Feed: bottom sheet over a dimmed home. Drizzle / Shower / Storm, money details, the
-// "food stays with Mochi" note, and one button that names the amount.
-import { useState } from 'react';
+// "food stays with Mochi" note, and one button that names the amount. Shows what the player's
+// account holds; portions it can't pay for (food plus the network fee held back) are greyed out.
+import { useEffect, useState } from 'react';
 import { useApp, usePet } from '../state';
 import { navigate } from '../lib/router';
 import { atLeastDays, errorText, fmtNear, portionDays } from '../lib/format';
+import { FEED_FEE_NEAR } from '../lib/client';
 import { Mochi } from '../components/Mochi';
 import { Sheet } from '../components/Sheet';
 import { MoneyDetails, TestnetNear } from '../components/MoneyDetails';
@@ -17,14 +19,37 @@ export const PORTIONS = [
 ] as const;
 type PortionId = (typeof PORTIONS)[number]['id'];
 
+const FAUCET = 'https://docs.near.org/getting-started/faucet';
+/** Balances to three places, rounded down, so 0.018 never shows as 0.02. */
+const fmtBalance = (n: number) => (Math.floor(n * 1000) / 1000).toFixed(3).replace(/\.?0+$/, '') || '0';
+
 export function FeedSheet() {
   const { client, account, setPet, setCelebration } = useApp();
   const pet = usePet();
   const [choice, setChoice] = useState<PortionId>('shower');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [balance, setBalance] = useState<number | null>(null);
   const portion = PORTIONS.find((p) => p.id === choice) ?? PORTIONS[1];
   const close = () => navigate('/home', { replace: true });
+  const affordable = (near: number) => balance == null || near + FEED_FEE_NEAR <= balance;
+  const canFeedAny = PORTIONS.some((p) => affordable(p.near));
+
+  useEffect(() => {
+    let live = true;
+    client
+      .balance()
+      .then((b) => {
+        if (!live) return;
+        setBalance(b);
+        // Start on the biggest portion up to Shower that the account can pay for.
+        if (b != null && 0.1 + FEED_FEE_NEAR > b && 0.02 + FEED_FEE_NEAR <= b) setChoice('drizzle');
+      })
+      .catch(() => undefined);
+    return () => {
+      live = false;
+    };
+  }, [client]);
 
   async function feed() {
     setBusy(true);
@@ -39,6 +64,7 @@ export function FeedSheet() {
     } catch (e) {
       setError(errorText(e));
       setBusy(false);
+      client.balance().then(setBalance).catch(() => undefined);
     }
   }
 
@@ -52,28 +78,32 @@ export function FeedSheet() {
       >
         <fieldset className="portions">
           <legend className="sr-only">Portion</legend>
-          {PORTIONS.map((p) => (
-            <label key={p.id} className={p.id === choice ? 'portion portion--on' : 'portion'}>
-              <input
-                type="radio"
-                name="portion"
-                className="sr-only"
-                value={p.id}
-                checked={p.id === choice}
-                onChange={() => setChoice(p.id)}
-                disabled={busy}
-              />
-              <RainDrop size={p.drop} />
-              <span className="portion__name">{p.label}</span>
-              <span className="portion__days">{portionDays(p.near, pet.dailyCapNear)}</span>
-              <span className="portion__near mono">{fmtNear(p.near)} NEAR</span>
-            </label>
-          ))}
+          {PORTIONS.map((p) => {
+            const ok = affordable(p.near);
+            return (
+              <label key={p.id} className={['portion', p.id === choice && 'portion--on', !ok && 'portion--off'].filter(Boolean).join(' ')}>
+                <input
+                  type="radio"
+                  name="portion"
+                  className="sr-only"
+                  value={p.id}
+                  checked={p.id === choice}
+                  onChange={() => setChoice(p.id)}
+                  disabled={busy || !ok}
+                />
+                <RainDrop size={p.drop} />
+                <span className="portion__name">{p.label}</span>
+                <span className="portion__days">{ok ? portionDays(p.near, pet.dailyCapNear) : 'Not enough NEAR'}</span>
+                <span className="portion__near mono">{fmtNear(p.near)} NEAR</span>
+              </label>
+            );
+          })}
         </fieldset>
 
         <MoneyDetails
           rows={[
             { label: 'From', value: account?.accountId ?? '—', mono: true },
+            { label: 'You have', value: <span className="mono">{balance == null ? '—' : `${fmtBalance(balance)} testnet NEAR`}</span> },
             {
               label: 'To',
               value: (
@@ -88,12 +118,24 @@ export function FeedSheet() {
           ]}
         />
 
-        <p className="note">
-          Days are counted at the full daily cap, so light chatting lasts longer. Food stays with {pet.name}: only its
-          kitchen can spend it, with a receipt for every reply. You can't take it back out.
-        </p>
+        {canFeedAny ? (
+          <p className="note">
+            Days are counted at the full daily cap, so light chatting lasts longer. Food stays with {pet.name}: only its
+            kitchen can spend it, with a receipt for every reply. You can't take it back out. Feeding also needs about{' '}
+            {fmtNear(FEED_FEE_NEAR)} NEAR held for the network fee; most of it comes back.
+          </p>
+        ) : (
+          <p className="warn">
+            Your account has {fmtBalance(balance ?? 0)} testnet NEAR, not enough to feed {pet.name}: even a Drizzle needs
+            about {fmtNear(0.02 + FEED_FEE_NEAR)} with the network fee. Testnet NEAR is free:{' '}
+            <a href={FAUCET} target="_blank" rel="noopener noreferrer">
+              get some from NEAR's faucet
+            </a>{' '}
+            for <span className="mono">{account?.accountId}</span>, then come back.
+          </p>
+        )}
         <ErrorText>{error}</ErrorText>
-        <Button onClick={feed} busy={busy} busyLabel="Feeding…">
+        <Button onClick={feed} busy={busy} busyLabel="Feeding…" disabled={!affordable(portion.near)}>
           Feed {fmtNear(portion.near)} NEAR
         </Button>
       </Sheet>

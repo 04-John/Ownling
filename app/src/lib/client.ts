@@ -4,6 +4,12 @@
 // message is safe to show (sentence case, no apology).
 import type { Account, ActiveGame, AppConfig, ChatTurn, DiaryView, GameId, PetState, TalkResult } from './types';
 
+/**
+ * What feeding needs in the account on top of the food itself: NEAR holds back the most the
+ * call's gas could cost (feed attaches 30 Tgas, about 0.03 NEAR) and refunds what isn't burned.
+ */
+export const FEED_FEE_NEAR = 0.032;
+
 export interface OwnlingClient {
   readonly config: AppConfig;
 
@@ -22,6 +28,8 @@ export interface OwnlingClient {
   /** Adopt: the deposit pays storage (about 0.01 NEAR) and the rest becomes food. */
   adopt(name: string, depositNear: number): Promise<PetState>;
   feed(amountNear: number): Promise<PetState>;
+  /** Testnet NEAR the signed-in account can spend (its balance less what its storage needs), or null if unknown. */
+  balance(): Promise<number | null>;
   play(): Promise<PetState>;
   /** Wear these wardrobe items (one per slot, each unlocked); an empty list takes everything off. */
   dress(outfit: string[]): Promise<PetState>;
