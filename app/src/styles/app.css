@@ -477,6 +477,7 @@ a.btn[aria-disabled="true"] { pointer-events: none; opacity: 0.6; }
 .talk-reply { align-self: flex-start; max-width: 300px; display: flex; flex-direction: column; gap: 6px; }
 .talk-reply > .proof-tag { align-self: flex-start; }
 .talk-reply > .talk-action { align-self: flex-start; width: auto; min-height: 40px; padding: 8px 16px; font-size: 14px; }
+.talk-reply > .talk-going { margin: 2px 0 0; font-size: 14px; font-weight: 700; color: var(--ow-proof); }
 .voice-going { margin: 0; text-align: center; font-size: 14px; font-weight: 700; color: var(--ow-proof); }
 .talk-pending { align-self: flex-start; display: flex; align-items: center; gap: 8px; }
 .composer {

@@ -3,15 +3,17 @@
 // and the composer. Opened with ?game=<id> it plays a round: Mochi asks first, a game bar shows
 // above the chat, and a result card offers Play again. Moments: thinking while waiting (talking on
 // an egg: the hatching), talking while the reply types in and ~1.5 s after, verified for ~2 s.
+// Ask for something ("let's play riddles", "can I feed you?") and it opens by itself once Mochi
+// has answered; feeding still needs your tap on Feed.
 import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react';
-import { GAMES } from '../../../shared/mind';
+import { GAMES, stillAsking } from '../../../shared/mind';
 import { newlyUnlocked, type Item } from '../../../shared/wardrobe';
 import { useApp, usePet } from '../state';
 import { capitalize, dayLabel, errorText, fmtCountdown, runwayPhrase, sameDay, stageRank } from '../lib/format';
 import { prefersReducedMotion } from '../lib/hooks';
 import { navigate, useRoute } from '../lib/router';
-import { actionTarget } from '../lib/actions';
-import type { ActiveGame, ChatTurn, GameId, PetState, Stage, TalkResult } from '../lib/types';
+import { actionTarget, type ActionTarget } from '../lib/actions';
+import type { ActiveGame, ChatTurn, GameId, PetAction, PetState, Stage, TalkResult } from '../lib/types';
 import type { Moment } from '../components/Mochi';
 import { Mochi } from '../components/Mochi';
 import { Bubble, withActions } from '../components/Bubble';
@@ -22,6 +24,7 @@ import { BackButton, Button, ErrorText } from '../components/ui';
 
 const TYPE_MS = 22; // per tick
 const TYPE_CHARS = 2; // characters per tick
+const OPEN_AFTER_MS = 1600; // time to read Mochi's answer before what you asked for opens
 
 const PLACEHOLDER: Record<GameId, string> = { riddle: 'Your answer', guess: 'Ask a yes-or-no question', rather: 'Pick one' };
 
@@ -41,6 +44,9 @@ export function Talk() {
   const [grewTo, setGrewTo] = useState<Stage | null>(null);
   const [unlocked, setUnlocked] = useState<Item[]>([]);
   const [hearing, setHearing] = useState(false);
+  /** What you asked Mochi for, about to open. */
+  const [going, setGoing] = useState<ActionTarget | null>(null);
+  const openTimer = useRef<number | null>(null);
   /** Mochi's reply while it's being written, before its proof is checked. */
   const [streaming, setStreaming] = useState<string | null>(null);
   const streamedRef = useRef(false);
@@ -127,7 +133,29 @@ export function Talk() {
     navigate('/talk', { replace: true });
   }
 
-  useEffect(() => () => timers.current.forEach((t) => window.clearTimeout(t)), []);
+  useEffect(() => () => {
+    timers.current.forEach((t) => window.clearTimeout(t));
+    if (openTimer.current) window.clearTimeout(openTimer.current);
+  }, []);
+
+  /** You asked for something: once Mochi has answered, it opens. Paying still takes your tap. */
+  function openSoon(action: PetAction) {
+    const target = actionTarget(action, pet.name);
+    setGoing(target);
+    openTimer.current = window.setTimeout(() => {
+      openTimer.current = null;
+      setGoing(null);
+      // Already on this game's screen (a round just ended): start a new round here.
+      if (action.kind === 'play' && action.game === askedGame) void startRound(askedGame);
+      else navigate(target.route, { replace: true });
+    }, OPEN_AFTER_MS);
+  }
+
+  function cancelOpen() {
+    if (openTimer.current) window.clearTimeout(openTimer.current);
+    openTimer.current = null;
+    setGoing(null);
+  }
 
   // Type the newest reply in, then hold "talking" ~1.5 s, then "verified" ~2 s if the proof passed.
   useEffect(() => {
@@ -186,6 +214,7 @@ export function Talk() {
 
   async function say(text: string) {
     if (!text || sending || pet.hibernating) return;
+    cancelOpen();
     const mine: ChatTurn = { role: 'user', content: text, at: Date.now() };
     setDraft('');
     setError(null);
@@ -198,6 +227,8 @@ export function Talk() {
       streamedRef.current = false;
       const r = await client.talk(text, playing, onText);
       await showReply({ ...r, reply: { ...r.reply, proof: r.reply.proof ?? r.proof } }, pet);
+      // Mochi still asking ("Want to play with me?") gets a button, not a jump to another screen.
+      if (r.action && !playing && !stillAsking(r.reply.content)) openSoon(r.action);
     } catch (err) {
       setTurns((t) => t.filter((x) => x !== mine));
       setDraft(text);
@@ -275,8 +306,12 @@ export function Talk() {
                           {pet.name} will remember: {fact}
                         </p>
                       ))}
-                      {/* What you asked Mochi for: a button on its latest reply that opens it. */}
-                      {t.action && i === turns.length - 1 && !sending && !game ? (
+                      {/* What you asked Mochi for opens by itself; after that, a button on the reply opens it again. */}
+                      {going && i === turns.length - 1 && !sending ? (
+                        <p className="talk-going" role="status">
+                          {going.going}
+                        </p>
+                      ) : t.action && i === turns.length - 1 && !sending && !game ? (
                         <Button variant="secondary" className="talk-action" onClick={() => navigate(actionTarget(t.action!, pet.name).route, { replace: true })}>
                           {actionTarget(t.action, pet.name).label}
                         </Button>

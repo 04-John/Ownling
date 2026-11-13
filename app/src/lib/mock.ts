@@ -1,7 +1,7 @@
 // A stand-in OwnlingClient with sample data and short delays, so screens can be built and
 // reviewed without the chain or the kitchen. Enabled with VITE_MOCK=1.
 import { moodFor, runwayDays, stageFor } from '../../../design/mochi/mochi';
-import { GUESS_THINGS, parseThought, type Mode } from '../../../shared/mind';
+import { GUESS_THINGS, parseThought, sendableTurns, type Mode } from '../../../shared/mind';
 import { practiceReply } from '../../../shared/practice';
 import { isUnlocked, itemById } from '../../../shared/wardrobe';
 import { FEED_FEE_NEAR, type OwnlingClient } from './client';
@@ -37,7 +37,7 @@ export function createMockClient(preset?: string | null): OwnlingClient {
   async function think(message: string | null, mode: Mode, onText?: (text: string) => void): Promise<TalkResult> {
     const p = need();
     if (p.hibernating) throw new Error(`${p.name} is hibernating. Feed it to wake it up.`);
-    const history = turns.slice(-12).map(({ role, content }) => ({ role, content }));
+    const history = sendableTurns(turns).slice(-12).map(({ role, content }) => ({ role, content }));
     if (message) turns.push({ role: 'user', content: message, at: Date.now() });
     await wait(900);
     const thought = parseThought(practiceReply(p, history, message, mode));

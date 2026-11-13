@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useApp, usePet } from '../state';
 import { navigate } from '../lib/router';
 import { actionTarget, type ActionTarget } from '../lib/actions';
+import { stillAsking } from '../../../shared/mind';
 import { errorText } from '../lib/format';
 import { startListening, toWav, type Listener } from '../lib/voice';
 import {
@@ -111,7 +112,8 @@ export function VoiceChat() {
         if (!mounted.current) return;
         setPet(r.pet);
         setReply({ ...r.reply, proof: r.reply.proof ?? r.proof });
-        const target = r.action ? actionTarget(r.action, pet.name) : null;
+        // Mochi still asking ("Want to play with me?") waits for your answer instead of opening it.
+        const target = r.action && !stillAsking(r.reply.content) ? actionTarget(r.action, pet.name) : null;
         setGoing(target);
         if (voice) await voice.finish(r.reply.content);
         else if (target) await new Promise((done) => setTimeout(done, 1800));

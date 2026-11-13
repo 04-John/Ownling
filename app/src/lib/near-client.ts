@@ -15,7 +15,7 @@ import {
   sealDiary,
   type DiaryEntry,
 } from '../../../shared/diary';
-import { GUESS_THINGS, type Mode } from '../../../shared/mind';
+import { GUESS_THINGS, sendableTurns, type Mode } from '../../../shared/mind';
 import type { OwnlingClient } from './client';
 import type { Account as Player, ActiveGame, AppConfig, ChatTurn, DiaryView, PetAction, PetState, Proof, TalkResult } from './types';
 
@@ -175,7 +175,7 @@ export function createNearClient(): OwnlingClient {
     diaryEntry = stored ? await openDiary(diaryKey, stored.ciphertext) : emptyDiary();
     if (!turns.length) {
       const at = Date.parse(diaryEntry.updatedAt) || Date.now();
-      turns = diaryEntry.recent.map((t) => ({ ...t, at }));
+      turns = sendableTurns(diaryEntry.recent).map((t) => ({ ...t, at }));
     }
   }
 
@@ -210,7 +210,7 @@ export function createNearClient(): OwnlingClient {
     if (pet.hibernating) throw new Error(`${pet.name} is hibernating. Feed it to wake it up.`);
     const token = await sessionToken();
     await unlock().catch(() => {});
-    const history = turns.slice(-12).map(({ role, content }) => ({ role, content }));
+    const history = sendableTurns(turns).slice(-12).map(({ role, content }) => ({ role, content }));
     const said: ChatTurn | null = message ? { role: 'user', content: message, at: Date.now() } : null;
     if (said) turns.push(said);
     let res: TalkResponse;

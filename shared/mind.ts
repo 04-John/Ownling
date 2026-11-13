@@ -86,11 +86,23 @@ export type Thought = {
   action: PetAction | null;
 };
 
+/**
+ * What Mochi says when the model wrote nothing but its app lines (say only "DO: PLAY RIDDLE"). The
+ * owner still gets a reply, and an empty turn never reaches the chat history.
+ */
+function quietReply(action: PetAction | null): string {
+  if (action?.kind === 'feed') return '*wiggles toward the food bowl* Ooh, snack time.';
+  if (action?.kind === 'play') return "*bounces happily* Yay, let's play.";
+  if (action?.kind === 'dress') return "*twirls* Let's pick something to wear.";
+  return '*wiggles happily*';
+}
+
 /** Split a raw model reply into what the owner sees and what the app keeps. */
 export function parseThought(raw: string): Thought {
   const remember = [...raw.matchAll(REMEMBER_LINE)].map((m) => m[1].replace(/^["']|["'.]$/g, '').slice(0, 120));
   const result = RESULT_LINE.exec(raw)?.[1]?.toLowerCase() as 'win' | 'lose' | undefined;
   const act = ACTION_LINE.exec(raw);
+  const action = act ? parseAction(act[1].toLowerCase(), act[2]) : null;
   const reply = raw
     .replace(REMEMBER_LINE, '')
     .replace(new RegExp(RESULT_LINE.source, 'gi'), '')
@@ -98,11 +110,25 @@ export function parseThought(raw: string): Thought {
     .replace(/\n{2,}/g, '\n')
     .trim();
   return {
-    reply,
+    reply: reply || quietReply(action),
     remember: remember.filter(Boolean).slice(0, 2),
     result: result ?? null,
-    action: act ? parseAction(act[1].toLowerCase(), act[2]) : null,
+    action,
   };
+}
+
+/**
+ * A reply that ends in a question ("Want to play with me?") is Mochi offering, not doing: the app
+ * waits for the owner's answer instead of opening anything by itself.
+ */
+export function stillAsking(reply: string): boolean {
+  const words = reply.trim().replace(/(\s*\*[^*\n]*\*)+$/, ''); // "Shall we play? *bounces*"
+  return /[?？]["'”’)\s]*$/.test(words);
+}
+
+/** The turns worth sending as history: an empty one (from an older app) would be refused. */
+export function sendableTurns<T extends { content: string }>(turns: T[]): T[] {
+  return turns.filter((t) => typeof t.content === 'string' && t.content.trim() !== '');
 }
 
 const MARKERS = ['REMEMBER:', 'RESULT:', 'DO:'];
@@ -163,7 +189,7 @@ const ACTION_RULES =
   '"DO: FEED" when they want to feed you or give you a snack, with DRIZZLE, SHOWER or STORM added if they name that size. They pick the portion in the app.\n' +
   '"DO: PLAY RIDDLE", "DO: PLAY GUESS" (they guess what you are thinking of), "DO: PLAY RATHER" (would you rather), "DO: PLAY RAIN" (catch the rain), "DO: PLAY TUNE" (they copy your tune) or "DO: PLAY ECHO" (you repeat what they say in a funny voice) when they want to play that game.\n' +
   '"DO: DRESS" when they want to dress you up or change your outfit.\n' +
-  'Your reply then says, in character, that you are opening it. At most one DO line, and none unless they asked.';
+  'Always write your reply first, saying in character that you are opening it, then put the DO line on its own last line. At most one DO line, and none unless they asked. If you suggest something yourself, ask and wait for their yes: never put a DO line in the same reply as your own suggestion.';
 
 /** "about 23 more days", from the food left and the daily cap, the same sum the app's runway meter uses. */
 function foodDays(budget: bigint, dailyCap: bigint): string {

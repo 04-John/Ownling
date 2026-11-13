@@ -1,7 +1,7 @@
 // Run: node --test shared/mind.test.ts
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { parseThought, settleRound, systemPrompt, visibleSoFar, type MindPet } from './mind.ts';
+import { parseThought, sendableTurns, settleRound, stillAsking, systemPrompt, visibleSoFar, type MindPet } from './mind.ts';
 import { practiceReply } from './practice.ts';
 
 const pet: MindPet & { messages: number } = {
@@ -76,6 +76,25 @@ test('a DO line becomes an action and never shows', () => {
   const full = '*wiggles* Riddle time.\nDO: PLAY RIDDLE';
   for (let i = 1; i <= full.length; i++) assert.doesNotMatch(visibleSoFar(full.slice(0, i)), /DO:|\bDO$|PLAY/, `at ${i}`);
   assert.equal(visibleSoFar('What shall we do next'), 'What shall we do next', 'a finished word "do" in a sentence shows once more arrives');
+});
+
+test('a reply that is only a DO line still says something, and empty turns are never sent', () => {
+  const only = parseThought('DO: PLAY RIDDLE');
+  assert.deepEqual(only.action, { kind: 'play', game: 'riddle' });
+  assert.ok(only.reply.trim().length > 0, 'the owner sees a reply, not an empty bubble');
+  assert.ok(parseThought('DO: FEED').reply.length > 0);
+  assert.ok(parseThought('REMEMBER: Likes hats').reply.length > 0);
+  const turns = [{ role: 'user', content: 'riddles' }, { role: 'assistant', content: '' }, { role: 'user', content: '  ' }, { role: 'user', content: 'hi' }];
+  assert.deepEqual(sendableTurns(turns).map((t) => t.content), ['riddles', 'hi']);
+});
+
+test('Mochi offering is not Mochi doing: a reply ending in a question opens nothing by itself', () => {
+  // Seen live: "what do you want to do today?" got an offer and a DO line together.
+  assert.ok(stillAsking('*puffs up thoughtfully* I want to play catch-the-rain. Want to play with me?'));
+  assert.ok(stillAsking('Shall we play? *bounces*'));
+  assert.ok(stillAsking('いっしょにあそぶ？'));
+  assert.ok(!stillAsking('*wiggles* Rain catching, my favorite. Opening it now.'));
+  assert.ok(!stillAsking('Is it snack time? Yes it is, opening my bowl.'));
 });
 
 test('only the app is told about actions, and only in plain chat', () => {

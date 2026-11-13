@@ -154,7 +154,10 @@ function parseTalk(body: unknown): { tokenId: string; message: string | null; hi
   const mode = parseMode(b);
   // Mochi speaks first when greeting or opening a game round; otherwise the owner said something.
   const speaksFirst = mode.kind === 'greet' || (mode.kind === 'game' && b.message == null);
-  const history = Array.isArray(b.history) ? b.history.slice(-MAX_TURNS) : [];
+  // Empty turns are skipped, not refused: an older app could save a reply that was only a DO line.
+  const history = Array.isArray(b.history)
+    ? b.history.filter((t) => typeof (t as { content?: unknown })?.content !== 'string' || (t as { content: string }).content.trim() !== '').slice(-MAX_TURNS)
+    : [];
   return {
     mode,
     tokenId: text(b.tokenId, 32, 'tokenId'),
