@@ -62,18 +62,25 @@ export type PetAction =
 /** The lines Mochi adds for the app, stripped from what the owner sees. */
 const REMEMBER_LINE = /^\s*REMEMBER:\s*(.+?)\s*$/gim;
 const RESULT_LINE = /\bRESULT:\s*(WIN|LOSE)\b/i;
-const ACTION_LINE = /\bDO:\s*(FEED|PLAY|DRESS)\b[ \t]*([A-Za-z]*)[^\n]*/i;
+/** Any "DO:" line, read whole: the model doesn't always keep to "DO: PLAY RAIN" ("DO: PLAY CATCH THE RAIN"). */
+const ACTION_LINE = /\bDO:([^\n]*)/;
 
-const PLAYABLE: Record<string, GameId | QuickGameId> = {
-  riddle: 'riddle', riddles: 'riddle', guess: 'guess', rather: 'rather', rain: 'rain', tune: 'tune', echo: 'echo',
-};
+/** The words that name each game in a DO line, checked in this order. */
+const GAME_WORDS: [RegExp, GameId | QuickGameId][] = [
+  [/riddle/, 'riddle'], [/guess/, 'guess'], [/rather/, 'rather'], [/rain|catch/, 'rain'], [/tune|song|sing|melod/, 'tune'], [/echo|repeat/, 'echo'],
+];
 const PORTION_NAMES: Portion[] = ['drizzle', 'shower', 'storm'];
 
-function parseAction(verb: string, arg: string): PetAction | null {
-  const word = arg.toLowerCase();
-  if (verb === 'feed') return PORTION_NAMES.includes(word as Portion) ? { kind: 'feed', portion: word as Portion } : { kind: 'feed' };
-  if (verb === 'play') return PLAYABLE[word] ? { kind: 'play', game: PLAYABLE[word] } : null;
-  return { kind: 'dress' };
+/** What a DO line asks for, by its words; a game the app doesn't have opens nothing. */
+function parseAction(line: string): PetAction | null {
+  const words = line.toLowerCase();
+  if (/\b(feed|food|bowl|snack)/.test(words)) {
+    const portion = PORTION_NAMES.find((p) => words.includes(p));
+    return portion ? { kind: 'feed', portion } : { kind: 'feed' };
+  }
+  if (/\b(dress|wardrobe|outfit|cloth)/.test(words)) return { kind: 'dress' };
+  const game = GAME_WORDS.find(([re]) => re.test(words))?.[1];
+  return game ? { kind: 'play', game } : null;
 }
 
 export type Thought = {
@@ -102,11 +109,11 @@ export function parseThought(raw: string): Thought {
   const remember = [...raw.matchAll(REMEMBER_LINE)].map((m) => m[1].replace(/^["']|["'.]$/g, '').slice(0, 120));
   const result = RESULT_LINE.exec(raw)?.[1]?.toLowerCase() as 'win' | 'lose' | undefined;
   const act = ACTION_LINE.exec(raw);
-  const action = act ? parseAction(act[1].toLowerCase(), act[2]) : null;
+  const action = act ? parseAction(act[1]) : null;
   const reply = raw
     .replace(REMEMBER_LINE, '')
     .replace(new RegExp(RESULT_LINE.source, 'gi'), '')
-    .replace(new RegExp(ACTION_LINE.source, 'gi'), '')
+    .replace(new RegExp(ACTION_LINE.source, 'g'), '')
     .replace(/\n{2,}/g, '\n')
     .trim();
   return {
@@ -189,6 +196,7 @@ const ACTION_RULES =
   '"DO: FEED" when they want to feed you or give you a snack, with DRIZZLE, SHOWER or STORM added if they name that size. They pick the portion in the app.\n' +
   '"DO: PLAY RIDDLE", "DO: PLAY GUESS" (they guess what you are thinking of), "DO: PLAY RATHER" (would you rather), "DO: PLAY RAIN" (catch the rain), "DO: PLAY TUNE" (they copy your tune) or "DO: PLAY ECHO" (you repeat what they say in a funny voice) when they want to play that game.\n' +
   '"DO: DRESS" when they want to dress you up or change your outfit.\n' +
+  'Write the DO line exactly as shown, with one game word: "DO: PLAY RAIN", not "DO: PLAY CATCH THE RAIN".\n' +
   'Always write your reply first, saying in character that you are opening it, then put the DO line on its own last line. At most one DO line, and none unless they asked. If you suggest something yourself, ask and wait for their yes: never put a DO line in the same reply as your own suggestion.';
 
 /** "about 23 more days", from the food left and the daily cap, the same sum the app's runway meter uses. */

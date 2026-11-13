@@ -78,6 +78,23 @@ test('a DO line becomes an action and never shows', () => {
   assert.equal(visibleSoFar('What shall we do next'), 'What shall we do next', 'a finished word "do" in a sentence shows once more arrives');
 });
 
+test('a DO line in other words still opens the right thing, and never shows', () => {
+  // Seen live in voice chat: "...so I open that one." and nothing opened.
+  const rain = { kind: 'play', game: 'rain' };
+  for (const line of ['DO: PLAY CATCH THE RAIN', 'DO: PLAY CATCH-THE-RAIN', 'DO: PLAY CATCH_THE_RAIN', 'DO: PLAY "RAIN"', 'DO: PLAY: RAIN', 'DO: OPEN RAIN', 'DO: PLAY Catch the rain.']) {
+    const t = parseThought(`*bounces* I open that one.\n${line}`);
+    assert.deepEqual(t.action, rain, line);
+    assert.equal(t.reply, '*bounces* I open that one.', `${line} is hidden`);
+  }
+  assert.deepEqual(parseThought('Ok.\nDO: PLAY WOULD YOU RATHER').action, { kind: 'play', game: 'rather' });
+  assert.deepEqual(parseThought('Ok.\nDO: PLAY GUESS MY THING').action, { kind: 'play', game: 'guess' });
+  assert.deepEqual(parseThought("Ok.\nDO: PLAY MOCHI'S TUNE").action, { kind: 'play', game: 'tune' });
+  assert.deepEqual(parseThought('Ok.\nDO: OPEN THE FOOD BOWL').action, { kind: 'feed' });
+  assert.deepEqual(parseThought('Ok.\nDO: FEED A BIG STORM').action, { kind: 'feed', portion: 'storm' });
+  assert.deepEqual(parseThought('Ok.\nDO: OPEN WARDROBE').action, { kind: 'dress' });
+  assert.equal(parseThought("Here's what we can do: catch the rain.").action, null, 'plain words are not a DO line');
+});
+
 test('a reply that is only a DO line still says something, and empty turns are never sent', () => {
   const only = parseThought('DO: PLAY RIDDLE');
   assert.deepEqual(only.action, { kind: 'play', game: 'riddle' });

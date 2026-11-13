@@ -141,7 +141,7 @@ You need Node 24 or later. For the contract you also need Rust (pinned in `contr
 | Do | See |
 |---|---|
 | `cd contract && cargo test` | `25 passed; 0 failed` |
-| `node --test shared/diary.test.ts shared/mind.test.ts shared/wardrobe.test.ts shared/speech.test.ts` | `pass 24`, `fail 0` (diary encryption; the mind's modes, parsing, actions and practice games; the wardrobe's unlock rules and placement; speech clean-up) |
+| `node --test shared/diary.test.ts shared/mind.test.ts shared/wardrobe.test.ts shared/speech.test.ts` | `pass 25`, `fail 0` (diary encryption; the mind's modes, parsing, actions and practice games; the wardrobe's unlock rules and placement; speech clean-up) |
 | `cd app && npm ci && npm run demo` | The whole game on http://localhost:5173 with sample data and practice replies: intro, greeting, games, memory, growth. No chain, no keys. Add `?preset=almost-child#/talk` to the address to see Mochi grow up after one message. |
 | `cd contract && cargo near build non-reproducible-wasm` | `target/near/ownling.wasm` |
 
