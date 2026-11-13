@@ -203,7 +203,7 @@ Both apps carry their own copy of the game, built with `--mode android` or `--mo
 - AI-written code: most of the code was written with Claude Code (Anthropic), directed and reviewed by the author.
 - AI-made design: the visual design, the Mochi character and the brand assets in `design/` were made by the author with Claude. The files carry Anthropic Content Credentials (C2PA).
 - Main libraries: near-sdk and near-contract-standards 5.29, near-api-js 7.4, @nearai/inference-sdk 0.2.1, React 19, Vite 8, vite-plugin-node-polyfills, vite-plugin-singlefile, Fontsource fonts, Capacitor 8.5 (Android app), Electron 44 and electron-builder 26 (Windows app).
-- This is the author's only NEAR Hackathon entry.
+- Other entry: the author also entered **Tickmark**, books and audit questions for NEAR DAO treasuries (https://github.com/04-John/Tickmark). The two projects are independent.
 
 ### Tracks
 
