@@ -48,6 +48,8 @@ style.textContent = MOCHI_CSS;
 document.head.append(style);
 drawPet('baby', 'hibernating', 'none');
 checkReach();
+// The Ownling light stays live: switch the app's server off or on and it shows within seconds.
+setInterval(() => reachable(`${APP_URL}/health`).then((ok) => chip('chip-app', 'Ownling app', ok)), 15_000);
 
 $('signin').addEventListener('submit', (e) => {
   e.preventDefault();
@@ -72,7 +74,8 @@ function checkReach() {
 
 async function reachable(url: string): Promise<boolean> {
   try {
-    const res = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    // A first connection can take several seconds on a slow network; that isn't "unreachable".
+    const res = await fetch(url, { cache: 'no-store', signal: AbortSignal.timeout(10_000) });
     return res.ok;
   } catch {
     return false;
